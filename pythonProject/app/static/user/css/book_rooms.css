@@ -1,0 +1,225 @@
+:root {
+  --primary-color: #e82574;
+  --primary-color-dark: #bc1c5c;
+  --text-dark: #0c0a09;
+  --text-light: #78716c;
+  --white: #ffffff;
+  --max-width: 1200px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-position: center;
+  background-size: auto;
+  background-color: #afa186;
+}
+
+#form {
+  width: 100%;
+  max-width: 800px;
+  margin: auto;
+  margin-top: 100px;
+}
+
+#first-group,
+#second-group {
+  width: 48%;
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 2%;
+}
+
+#second-group {
+  margin-right: 0;
+}
+
+
+#content {
+  border: 1px solid #fff;
+  margin: 10px 0;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+}
+
+#content #input-group {
+  border: none;
+  outline: none;
+  background: transparent;
+  margin-left: 8px;
+  width: 100%;
+  max-width: 300px;
+  color: #fff;
+}
+
+::placeholder {
+  color: #fff;
+}
+
+.fa {
+  color: var(--primary-color);
+  border-right: 1px solid #fff;
+  padding: 8px;
+}
+
+#submit-btn {
+  margin-top: 30px;
+  background-color: var(--primary-color);
+  color: var(--white);
+  width: 150px;
+  outline: none;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#submit-btn:hover {
+  background-color: var(--primary-color-dark);
+}
+/* Dropdown Styling */
+select#input-group {
+  background-color: transparent; /* Matches form background */
+  color: white; /* Text color */
+  border: none; /* Remove border */
+  width: 100%; /* Ensure full width */
+}
+
+/* Dropdown Option Styling */
+select#input-group option {
+  background-color: black; /* Dropdown background color */
+  color: white; /* Dropdown text color */
+}
+
+/* Dropdown Hover and Focus States */
+select#input-group:focus,
+select#input-group:hover {
+  outline: none; /* Remove default outline */
+  border-color: var(--primary-color); /* Optional: Add border color on focus */
+}
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+  #first-group,
+  #second-group {
+    width: 100%;
+    margin-right: 0;
+    display: block;
+  }
+
+  #submit-btn {
+    width: 100%;
+  }
+}
+
+.main {
+  height: 100vh;
+  width: 100%;
+}
+.wrapper,
+.slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.slide {
+  overflow: hidden;
+}
+.slide::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+.slide .image {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.slide .image-data {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+  z-index: 100;
+}
+.image-data span.text {
+  font-size: 14px;
+  font-weight: 400;
+  color: #fff;
+}
+.image-data h2 {
+  font-size: 45px;
+  font-weight: 600;
+  color: #fff;
+}
+a.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 25px;
+  color: #333;
+  background: #fff;
+  text-decoration: none;
+  margin-top: 25px;
+  transition: all 0.3s ease;
+}
+a.button:hover {
+  color: #fff;
+  background-color: #c87e4f;
+}
+
+/* swiper button css */
+.nav-btn {
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+.swiper-button-next {
+  right: 50px;
+}
+.swiper-button-prev {
+  left: 50px;
+}
+.nav-btn::before,
+.nav-btn::after {
+  font-size: 25px;
+  color: #fff;
+}
+.swiper-pagination-bullet {
+  opacity: 1;
+  height: 12px;
+  width: 12px;
+  background-color: #fff;
+  visibility: hidden;
+}
+.swiper-pagination-bullet-active {
+  border: 2px solid #fff;
+  background-color: #c87e4f;
+}
+
+@media screen and (max-width: 768px) {
+  .nav-btn {
+    visibility: hidden;
+  }
+  .swiper-pagination-bullet {
+    visibility: visible;
+  }
+}

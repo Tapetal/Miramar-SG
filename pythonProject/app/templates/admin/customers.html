@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--=== Coding by CodingLab | www.codinglabweb.com === -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!----======== CSS ======== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/customers.css') }}">
+    <!----===== Iconscout CSS ===== -->
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <title>Admin Dashboard Panel</title>
+</head>
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="logo"></a>
+            </div>
+
+            <span class="logo_name">CodingLab</span>
+        </div>
+
+                <div class="menu-items">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">
+                    <i class="uil uil-estate"></i>
+                    <span class="link-name">Dashboard</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_rooms') }}">
+                    <i class="uil uil-files-landscapes"></i>
+                    <span class="link-name">Room</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_customers') }}">
+                    <i class="uil uil-chart"></i>
+                    <span class="link-name">Customer</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_bookings') }}">
+                    <i class="uil uil-thumbs-up"></i>
+                    <span class="link-name">Manage Booking</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_feedback') }}">
+                    <i class="uil uil-comments"></i>
+                    <span class="link-name">Feedback</span>
+                </a></li>
+            </ul>
+
+            <ul class="logout-mode">
+                <li><a href="admin_logout">
+                    <i class="uil uil-signout"></i>
+                    <span class="link-name">Logout</span>
+                </a></li>
+
+                <li class="mode">
+                    <a href="#">
+                        <i class="uil uil-moon"></i>
+                    <span class="link-name">Dark Mode</span>
+                </a>
+
+                <div class="mode-toggle">
+                  <span class="switch"></span>
+                </div>
+            </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+                <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+
+            <div class="search-box">
+                <i class="uil uil-search"></i>
+                <input type="text" id="search-input" placeholder="Search here...">
+            </div>
+            <a href="{{ url_for('admin_profile') }}"><img src="{{ url_for('static', filename='user/assets/pfl_dark.png') }}" class="profile" id="profileImage" /></a>
+        </div>
+        <div class="dash-content">
+    <div class="title">
+        <h1>Registered Users</h1>
+    </div>
+    <table id="user-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="user-table-body">
+            {% if users %}
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.Username }}</td>
+                        <td>{{ user.Email }}</td>
+                        <td>
+                            <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn">
+                                <i class="uil uil-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4">No users found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+    </section>
+
+    <script src="{{ url_for('static', filename='admin/js/dashboard.js') }}"></script>
+<script>
+    const searchInput = document.getElementById('search-input');
+    const userTableBody = document.getElementById('user-table-body');
+
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = userTableBody.rows;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const username = row.cells[1].textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+
+            if (username.includes(searchTerm) || email.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+</script>
+</body>
+</html>
