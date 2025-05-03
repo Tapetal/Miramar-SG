@@ -1,0 +1,76 @@
+:root {
+    --yellow: #f9d806;
+    --light-yellow: #ffee80;
+    --black: #130f40;
+    --light-color: #666;
+    --box-shadow: 0 .5rem 1rem rgba(0,0,0,.1);
+    --border: .1rem solid rgba(0,0,0,.1);
+}
+
+.contact {
+    padding: 2rem 9%;
+    background-color: #fff;
+}
+
+.contact .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.contact .row .map {
+    flex: 1;
+    min-width: 300px; /* Minimum width to ensure it's not too narrow */
+    height: 685px; /* Fixed height for the map */
+    padding: 0; /* Remove padding to prevent overflow issues */
+    border: var(--border);
+    border-radius: .5rem;
+    box-shadow: var(--box-shadow);
+}
+
+.contact .row form {
+    flex: 1;
+    min-width: 300px; /* Minimum width to ensure it's not too narrow */
+    padding: 2rem;
+    border: var(--border);
+    border-radius: .5rem;
+    box-shadow: var(--box-shadow);
+    text-align: center;
+}
+
+.contact .row .mapped {
+    border: 20px solid #e82574;
+}
+
+.contact .row form h3 {
+    font-size: 3rem;
+    color: #e82574;
+}
+
+.contact .row form .box {
+    margin: .7rem 0;
+    width: 100%;
+    border: var(--border);
+    padding: 1rem;
+    font-size: 1.6rem;
+    color: var(--black);
+    text-transform: none;
+}
+
+.contact .row form textarea {
+    height: 11rem;
+    resize: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .contact .row {
+        flex-direction: column; /* Stack items vertically on smaller screens */
+    }
+
+    .contact .row .map,
+    .contact .row form {
+        min-width: auto; /* Remove minimum width on small screens */
+        width: 100%; /* Ensure full width on smaller screens */
+    }
+}
