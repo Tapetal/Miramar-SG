@@ -1,12 +1,10 @@
 # import secrets
 import os
 import secrets
-import MySQLdb
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-
 from flask_session import Session
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, FileField
 from wtforms.validators import DataRequired
@@ -16,15 +14,14 @@ app = Flask(__name__, template_folder='app/templates', static_folder='app/static
 
 # Configuration
 app.secret_key = "ssshasd572332762332"
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = "root"
-app.config['MYSQL_PASSWORD'] = ""
-app.config['MYSQL_DB'] = "pythonproject"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.environ['DB_USER']}:{os.environ['DB_PASSWORD']}@{os.environ['DB_HOST']}/{os.environ['DB_NAME']}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 
-# Initialize MySQL and Session
-mysql = MySQL(app)
+
+# Initialize SQLAlchemy and Session
+db = SQLAlchemy(app)
 Session(app)
 
 @app.route('/')
