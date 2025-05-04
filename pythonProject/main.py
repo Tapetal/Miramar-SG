@@ -1,29 +1,76 @@
 import os
 import secrets
-import MySQLdb
+import re
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-
 from flask_session import Session
-from flask_mysqldb import MySQL
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, FileField
 from wtforms.validators import DataRequired
-import re
+
+# Determine which database system to use based on environment
+DB_TYPE = os.environ.get('DB_TYPE', 'mysql')  # 'mysql' or 'sqlite'
 
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 
 # Configuration
-app.secret_key = "ssshasd572332762332"
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = "root"
-app.config['MYSQL_PASSWORD'] = ""
-app.config['MYSQL_DB'] = "pythonproject"
+app.secret_key = os.environ.get('SECRET_KEY', "ssshasd572332762332")
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 
 # Initialize MySQL and Session
-mysql = MySQL(app)
+if DB_TYPE == 'mysql':
+    import MySQLdb
+    from flask_mysqldb import MySQL
+    
+    app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST', 'localhost')
+    app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER', 'root')
+    app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', '')
+    app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'pythonproject')
+    
+    # Initialize MySQL
+    mysql = MySQL(app)
+    
+    def get_db_cursor():
+        return mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    def commit_db():
+        mysql.connection.commit()
+
+else:  # SQLite
+    import sqlite3
+    from flask import g
+    
+    DATABASE = os.environ.get('DATABASE_PATH', 'pythonproject.db')
+    
+    def get_db():
+        db = getattr(g, '_database', None)
+        if db is None:
+            db = g._database = sqlite3.connect(DATABASE)
+            db.row_factory = sqlite3.Row  # This allows accessing columns by name
+        return db
+    
+    def get_db_cursor():
+        return get_db().cursor()
+    
+    def commit_db():
+        get_db().commit()
+    
+    @app.teardown_appcontext
+    def close_connection(exception):
+        db = getattr(g, '_database', None)
+        if db is not None:
+            db.close()
+    
+    # Function to initialize SQLite database if it doesn't exist
+    def init_sqlite_db():
+        with app.app_context():
+            db = get_db()
+            with app.open_resource('schema.sql', mode='r') as f:
+                db.cursor().executescript(f.read())
+            db.commit()
+
+# Initialize Session
 Session(app)
 
 @app.route('/')
@@ -35,7 +82,7 @@ def user_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = get_db_cursor()
         cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
         account = cursor.fetchone()
 
@@ -43,14 +90,12 @@ def user_login():
             session['loggedin'] = True
             session['id'] = account['id']
             session['username'] = account['Username']
-            session['email'] = account['Email']  # Add this line to store email in session
+            session['email'] = account['Email']
             msg = 'Logged in successfully!'
             return redirect(url_for('index'))
         else:
             msg = 'Incorrect email or password!'
     return render_template('user/login.html', msg=msg)
-
-
 
 # User registration route
 @app.route('/register', methods=['GET', 'POST'])
@@ -62,7 +107,7 @@ def user_register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = get_db_cursor()
         cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
         account = cursor.fetchone()
 
@@ -80,11 +125,10 @@ def user_register():
             msg = 'Password must be more than 8 characters.'
         else:
             cursor.execute('INSERT INTO users (Username, Password, Email) VALUES (%s, %s, %s)', (name, password, email))
-            mysql.connection.commit()
+            commit_db()
             msg = 'You have successfully registered!'
             return redirect(url_for('user_login'))
     return render_template('user/register.html', msg=msg)
-
 
 # User Logout route
 @app.route('/logout')
@@ -94,7 +138,7 @@ def user_logout():
     session.pop('Username', None)
     return redirect(url_for('user_login'))
 
-# User login route
+# Admin login route
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     msg = ''
@@ -190,12 +234,10 @@ def manage_customers():
 @app.route('/my_bookings')
 def my_bookings():
     if 'email' not in session:
-        return redirect(url_for('login'))  # Redirect to login if not logged in
+        return redirect(url_for('login'))
 
-    user_email = session['email']  # Get the logged-in user's email from the session
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Query to fetch only the logged-in user's bookings
+    user_email = session['email']
+    cursor = get_db_cursor()
     cursor.execute('SELECT * FROM bookings WHERE email = %s', (user_email,))
     bookings = cursor.fetchall()
 
@@ -257,6 +299,12 @@ def create_room():
         # Return a success message or redirect to a success page
         return 'Room created successfully!'
     return 'Error creating room'
+
+# Upload folder config for room images
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Feedback Management Route
 @app.route('/manage_feedback')
@@ -529,3 +577,4 @@ def admin_update_password():
 
 if __name__ == "__main__":
     app.run(debug=True)
+

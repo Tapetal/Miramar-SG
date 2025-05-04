@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: hotel-booking-system
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: sqlite  # Change to 'mysql' if using external MySQL
+      - key: DATABASE_PATH
+        value: /data/pythonproject.db  # Using persistent disk
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+
+## Uncomment below if you want to use Render's PostgreSQL instead of SQLite
+# databases:
+#  - name: hotel-booking-db
+#    databaseName: hotel_booking
+#    user: hotel_booking
+#    plan: free
