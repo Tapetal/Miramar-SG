@@ -4,71 +4,52 @@ import re
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, FileField
 from wtforms.validators import DataRequired
 
 # Determine which database system to use based on environment
-DB_TYPE = os.environ.get('DB_TYPE', 'mysql')  # 'mysql' or 'sqlite'
+DB_TYPE = os.environ.get('DB_TYPE', 'sqlite')  # 'mysql' or 'sqlite
 
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 
 # Configuration
-app.secret_key = os.environ.get('SECRET_KEY', "ssshasd572332762332")
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
+app.secret_key = "ssshasd572332762332"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'  # Use SQLite
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Flask-Session configuration
+app.config['SESSION_TYPE'] = 'filesystem'  # Set session type
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'myapp_'  # Optional: prefix for session keys
 
-# Initialize MySQL and Session
-if DB_TYPE == 'mysql':
-    import MySQLdb
-    from flask_mysqldb import MySQL
-    
-    app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST', 'localhost')
-    app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER', 'root')
-    app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', '')
-    app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'pythonproject')
-    
-    # Initialize MySQL
-    mysql = MySQL(app)
-    
-    def get_db_cursor():
-        return mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    def commit_db():
-        mysql.connection.commit()
+db = SQLAlchemy(app)
 
-else:  # SQLite
-    import sqlite3
-    from flask import g
-    
-    DATABASE = os.environ.get('DATABASE_PATH', 'pythonproject.db')
-    
-    def get_db():
-        db = getattr(g, '_database', None)
-        if db is None:
-            db = g._database = sqlite3.connect(DATABASE)
-            db.row_factory = sqlite3.Row  # This allows accessing columns by name
-        return db
-    
-    def get_db_cursor():
-        return get_db().cursor()
-    
-    def commit_db():
-        get_db().commit()
-    
-    @app.teardown_appcontext
-    def close_connection(exception):
-        db = getattr(g, '_database', None)
-        if db is not None:
-            db.close()
-    
-    # Function to initialize SQLite database if it doesn't exist
-    def init_sqlite_db():
-        with app.app_context():
-            db = get_db()
-            with app.open_resource('schema.sql', mode='r') as f:
-                db.cursor().executescript(f.read())
-            db.commit()
+# Define your User model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
+# Define your Admin model
+class AdminUser (db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+
+# CreateRoomForm class
+class CreateRoomForm(FlaskForm):
+    room_name = StringField('Room Name', validators=[DataRequired()])
+    room_type = StringField('Room Type', validators=[DataRequired()])
+    price = IntegerField('Price', validators=[DataRequired()])
+    room_image = FileField('Room Image', validators=[DataRequired()])
+
+# Create the database and tables
+with app.app_context():
+    db.create_all()
 
 # Initialize Session
 Session(app)
@@ -82,15 +63,12 @@ def user_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        cursor = get_db_cursor()
-        cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
-        account = cursor.fetchone()
-
-        if account and account['Password'] == password:
+        user = User.query.filter_by(email=email).first()
+        if user and user.password == password:  # Consider using hashed passwords
             session['loggedin'] = True
-            session['id'] = account['id']
-            session['username'] = account['Username']
-            session['email'] = account['Email']
+            session['id'] = user.id
+            session['username'] = user.username
+            session['email'] = user.email
             msg = 'Logged in successfully!'
             return redirect(url_for('index'))
         else:
@@ -106,12 +84,8 @@ def user_register():
         email = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
-
-        cursor = get_db_cursor()
-        cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
-        account = cursor.fetchone()
-
-        if account:
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
             msg = 'Account already exists!'
         elif not re.match(r'^[A-Za-z0-9]+$', name):
             msg = 'Username must contain only characters and numbers!'
@@ -124,8 +98,9 @@ def user_register():
         elif len(password) <= 8:
             msg = 'Password must be more than 8 characters.'
         else:
-            cursor.execute('INSERT INTO users (Username, Password, Email) VALUES (%s, %s, %s)', (name, password, email))
-            commit_db()
+            new_user = User(username=name, password=password, email=email)
+            db.session.add(new_user)
+            db.session.commit()
             msg = 'You have successfully registered!'
             return redirect(url_for('user_login'))
     return render_template('user/register.html', msg=msg)
@@ -135,59 +110,53 @@ def user_register():
 def user_logout():
     session.pop('loggedin', None)
     session.pop('id', None)
-    session.pop('Username', None)
+    session.pop('username', None)
     return redirect(url_for('user_login'))
 
 # Admin login route
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     msg = ''
-    if request.method == 'POST' and 'email' in request.form and 'password' in request.form:
+    if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM admin_users WHERE Email = % s AND Password = % s', (email, password,))
-        account = cursor.fetchone()
-        if account:
+        account = AdminUser .query.filter_by(email=email).first()
+        if account and check_password_hash(account.password, password):
             session['loggedin'] = True
-            session['id'] = account['id']
-            session['username'] = account['Username']
-            msg = 'Logged in successfully !'
-            return redirect(url_for('dashboard'))
+            session['id'] = account.id
+            session['username'] = account.username
+            msg = 'Logged in successfully!'
+            return redirect(url_for('dashboard'))  # Ensure you have a dashboard route
         else:
-            msg = 'Incorrect username / password !'
+            msg = 'Incorrect username/password!'
     return render_template('admin/login.html', msg=msg)
 
-# User registration route
-@app.route('/admin_register', methods=['GET', 'POST'])
-def admin_register():
     msg = ''
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
+        existing_account = AdminUser .query.filter_by(email=email).first()
 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM admin_users WHERE Email = %s', (email,))
-        account = cursor.fetchone()
-
-        if account:
+        if existing_account:
             msg = 'Account already exists!'
-        elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            msg = 'Invalid email address!'
-        elif not re.match(r'[A-Za-z0-9]+', name):
+        elif not re.match(r'^[A-Za-z0-9]+$', name):
             msg = 'Username must contain only characters and numbers!'
+        elif not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+            msg = 'Invalid email address!'
         elif not name or not password or not email:
             msg = 'Please fill out the form!'
         elif password != confirm_password:
             msg = 'Passwords do not match!'
         else:
-            cursor.execute('INSERT INTO admin_users (Username, Password, Email) VALUES (%s, %s, %s)',(name, password, email))
-            mysql.connection.commit()
+            hashed_password = generate_password_hash(password)
+            new_admin = AdminUser (username=name, password=hashed_password, email=email)
+            db.session.add(new_admin)
+            db.session.commit()
             msg = 'You have successfully registered!'
-            return redirect(url_for('user_login'))
-    return render_template('admin/login.html', msg=msg)
+            return redirect(url_for('admin_login'))
+    return render_template('admin/register.html', msg=msg)
 
 @app.route('/admin_logout')
 def admin_logout():
@@ -200,9 +169,7 @@ def admin_logout():
 @app.route('/index')
 def index():
     user_id = session.get('id')
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
+    user = User.query.get(user_id)
     return render_template('user/index.html', username=session['username'], email=session['email'])
 
 # Dashboard Route
@@ -218,87 +185,58 @@ def manage_rooms():
 # Customer Deleting Route
 @app.route('/delete_user/<int:user_id>')
 def delete_user(user_id):
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
-    mysql.connection.commit()
+    user = User.query.get(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
     return redirect(url_for('manage_customers'))
 
 # Customer Management Route
 @app.route('/manage_customers')
 def manage_customers():
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users')
-    users = cursor.fetchall()
-    return render_template('admin/customers.html', users=users)
+    users = User.query.all()
+    return render_template('admin /customers.html', users=users)
 
 @app.route('/my_bookings')
 def my_bookings():
     if 'email' not in session:
         return redirect(url_for('login'))
-
     user_email = session['email']
-    cursor = get_db_cursor()
-    cursor.execute('SELECT * FROM bookings WHERE email = %s', (user_email,))
-    bookings = cursor.fetchall()
-
+    bookings = Booking.query.filter_by(email=user_email).all()
     return render_template('user/my_bookings.html', bookings=bookings, email=user_email)
-
-
 
 # Manage Bookings Route
 @app.route('/manage_bookings')
 def manage_bookings():
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM bookings')
-    bookings = cursor.fetchall()
+    bookings = Booking.query.all()
     return render_template('admin/manage_bookings.html', bookings=bookings)
 
 @app.route('/confirm_booking/<int:booking_id>')
 def confirm_booking(booking_id):
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', ('Confirmed', booking_id))
-        mysql.connection.commit()
+    booking = Booking.query.get(booking_id)
+    if booking:
+        booking.status = 'Confirmed'
+        db.session.commit()
         flash('Booking confirmed successfully!')
-        return redirect(url_for('manage_bookings'))
-    except Exception as e:
-        flash('Error confirming booking: {}'.format(e))
-        return redirect(url_for('manage_bookings'))
+    else:
+        flash('Booking not found!')
+    return redirect(url_for('manage_bookings'))
 
 @app.route('/cancel_booking/<int:booking_id>')
-def cancel_booking(booking_id):
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', ('Canceled', booking_id))
-        mysql.connection.commit()
-        flash('Booking canceled!')
-        return redirect(url_for('manage_bookings'))
-    except Exception as e:
-        flash('Error canceling booking: {}'.format(e))
-        return redirect(url_for('manage_bookings'))
 
-class CreateRoomForm(FlaskForm):
-    room_name = StringField('Room Name', validators=[DataRequired()])
-    room_type = StringField('Room Type', validators=[DataRequired()])
-    price = IntegerField('Price', validators=[DataRequired()])
-    room_image = FileField('Room Image', validators=[DataRequired()])
 @app.route('/create_room', methods=['POST'])
 def create_room():
     form = CreateRoomForm()
     if form.validate_on_submit():
-        # Get the uploaded file
         room_image = form.room_image.data
-        # Save the file to a directory on the server
-
         filename = secure_filename(room_image.filename)
         room_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        # Insert the new room into the database
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('INSERT INTO rooms (name, type, price, image) VALUES (%s, %s, %s, %s)', (form.room_name.data, form.room_type.data, form.price.data, filename))
-        mysql.connection.commit()
-        # Return a success message or redirect to a success page
+        new_room = Room(name=form.room_name.data, type=form.room_type.data, price=form.price.data, image=filename)
+        db.session.add(new_room)
+        db.session.commit()
         return 'Room created successfully!'
     return 'Error creating room'
+
 
 # Upload folder config for room images
 UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
@@ -345,6 +283,11 @@ def nearby_places():
 def contact_us():
     return render_template('user/contact_us.html',  username=session['username'])
 
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 @app.route('/book_room_submit', methods=['POST'])
 def book_room_submit():
     if request.method == 'POST':
@@ -356,12 +299,9 @@ def book_room_submit():
         guests = request.form['guests']
         price = request.form['price']
         room_type = request.form['room_type']
-
-        # Save data to database
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('INSERT INTO bookings (name, email, room_name, check_in, check_out, no_of_guests, room_type, price, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', (name, email, room_name, check_in, check_out, guests, room_type, price, 'Pending'))
-        mysql.connection.commit()
-
+        new_booking = Booking(name=name, email=email, room_name=room_name, check_in=check_in, check_out=check_out, no_of_guests=guests, room_type=room_type, price=price, status='Pending')
+        db.session.add(new_booking)
+        db.session.commit()
         flash('Booking successful! Your booking is pending confirmation by the admin.')
         return redirect(url_for('index'))
     return redirect(url_for('rooms'))
@@ -369,36 +309,28 @@ def book_room_submit():
 @app.route('/book_room1')
 def book_room1():
     user_id = session.get('id')
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
-    return render_template('user/book_room1.html', username=session['username'], email=account['Email'])
+    account = User.query.get(user_id)
+    return render_template('user/book_room1.html', username=session['username'], email=account.email)
 
 # Rooms index page
 @app.route('/book_room2')
 def book_room2():
     user_id = session.get('id')
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
-    return render_template('user/book_room2.html', username=session['username'], email=account['Email'])
+    account = User.query.get(user_id)
+    return render_template('user/book_room2.html', username=session['username'], email=account.email)
 
 # Rooms index page
 @app.route('/book_room3')
 def book_room3():
     user_id = session.get('id')
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
-    return render_template('user/book_room3.html', username=session['username'], email=account['Email'])
+    account = User.query.get(user_id)
+    return render_template('user/book_room3.html', username=session['username'], email=account.email)
 
 @app.route('/profile')
 def user_profile():
     user_id = session.get('id')
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
-    return render_template('user/profile.html', username=account['Username'], email=account['Email'])
+    account = User.query.get(user_id)
+    return render_template('user/profile.html', username=account.username, email=account.email)
 
 # Rooms index page
 @app.route('/my_booking')
@@ -415,81 +347,59 @@ def user_forgot_password():
     msg = ''
     if request.method == 'POST':
         email = request.form['email']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
-        account = cursor.fetchone()
-
+        account = User.query.filter_by(email=email).first()
         if account:
-            # Directly redirect to reset password form
             return redirect(url_for('user_reset_password', email=email))
         else:
             msg = 'Email not found!'
-
     return render_template('user/forgot_password.html', msg=msg)
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 def user_reset_password():
     email = request.args.get('email')
     msg = ''
-
-    if request.method == 'POST':
+    if request .method == 'POST':
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
-
         if new_password != confirm_password:
             msg = 'Passwords do not match!'
         elif len(new_password) <= 8:
             msg = 'Password must be more than 8 characters.'
         else:
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('UPDATE users SET Password = %s WHERE Email = %s', (new_password, email))
-            mysql.connection.commit()
-            msg = 'Password successfully reset!'
-            return redirect(url_for('user_login'))
+            account = User.query.filter_by(email=email).first()
+            if account:
+                account.password = generate_password_hash(new_password)
+                db.session.commit()
+                msg = 'Password successfully reset!'
+                return redirect(url_for('user_login'))
+    return render_template('user/reset_password.html', msg=msg, email=email)
 
-    return render_template('user/forgot_password.html', msg=msg, email=email)
 
-
-@app.route('/update_profile', methods=['GET', 'POST'])
 def update_profile():
     msg = ''
     user_id = session.get('id')
-
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
-
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-        # Check if username is valid
+        # Validate username and email
         if not re.match(r'^[a-zA-Z0-9]+$', name):
             msg = 'Username must contain only characters and numbers!'
         elif not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
             msg = 'Invalid email address!'
         else:
-            # Check if email is already used by another account
-            cursor.execute('SELECT * FROM users WHERE Email = %s AND id != %s', (email, user_id))
-            account = cursor.fetchone()
+            account = User.query.filter_by(email=email).filter(User.id != user_id).first()
             if account:
                 msg = 'Email is already used by another account!'
             else:
-                # Update the user details
-                cursor.execute('UPDATE users SET Username = %s, Email = %s WHERE id = %s', (name, email, user_id))
-                mysql.connection.commit()
+                user = User.query.get(user_id)
+                user.username = name
+                user.email = email
+                db.session.commit()
                 msg = 'Profile updated successfully!'
-
-                # Update session variables
                 session['username'] = name
                 session['email'] = email
-
-    # Fetch updated user details
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    account = cursor.fetchone()
-
-    return render_template('user/profile.html', msg=msg, username=account['Username'], email=account['Email'])
-
-
-
+    account = User.query.get(user_id)
+    return render_template('user/profile.html', msg=msg, username=account.username, email=account.email)
 
 @app.route('/update_password', methods=['GET', 'POST'])
 def update_password():
@@ -498,21 +408,17 @@ def update_password():
         user_id = session['id']
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
-
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
         if new_password and confirm_password:
             if new_password != confirm_password:
                 msg = 'Passwords do not match!'
             elif len(new_password) <= 8:
                 msg = 'Password must be more than 8 characters.'
             else:
-                # Update the user password
-                cursor.execute('UPDATE users SET Password = %s WHERE id = %s', (new_password, user_id))
-                mysql.connection.commit()
+                user = User.query.get(user_id)
+                user.password = generate_password_hash(new_password)
+                db.session.commit()
                 msg = 'Password updated successfully!'
     return render_template('user/profile.html', msg=msg)
-
 
 @app.route('/admin_update_profile', methods=['GET', 'POST'])
 def admin_update_profile():
@@ -522,33 +428,22 @@ def admin_update_profile():
             user_id = session['id']
             name = request.form['name']
             email = request.form['email']
-
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-            # Check if username is valid
             if not re.match(r'^[a-zA-Z0-9]+$', name):
                 msg = 'Username must contain only characters and numbers!'
             elif not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
                 msg = 'Invalid email address!'
             else:
-                # Check if email is already used by another account
-                cursor.execute('SELECT * FROM admin_users WHERE Email = %s AND id != %s', (email, user_id))
-                account = cursor.fetchone()
-                if account:
-                    msg = 'Email is already used by another account!'
-                else:
-                    # Update the admin details
-                    cursor.execute('UPDATE admin_users SET Username = %s, Email = %s WHERE id = %s', (name, email, user_id))
-                    mysql.connection.commit()
+                    admin = AdminUser .query.get(user_id)
+                    admin.username = name
+                    admin.email = email
+                    db.session.commit()
                     msg = 'Profile updated successfully!'
                     session['username'] = name
                     session['email'] = email
         else:
             user_id = session['id']
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT * FROM admin_users WHERE id = %s', (user_id,))
-            account = cursor.fetchone()
-            return render_template('admin/profile.html', username=account['Username'], email=account['Email'], msg=msg)
+            admin = AdminUser .query.get(user_id)
+            return render_template('admin/profile.html', username=admin.username, email=admin.email, msg=msg)
         return render_template('admin/profile.html', username=session['username'], email=session['email'], msg=msg)
     return redirect(url_for('admin_login'))
 
@@ -559,21 +454,17 @@ def admin_update_password():
         user_id = session['id']
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
-
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
         if new_password and confirm_password:
             if new_password != confirm_password:
                 msg = 'Passwords do not match!'
             elif len(new_password) <= 8:
                 msg = 'Password must be more than 8 characters.'
             else:
-                # Update the admin password
-                cursor.execute('UPDATE admin_users SET Password = %s WHERE id = %s', (new_password, user_id))
-                mysql.connection.commit()
+                admin = AdminUser .query.get(user_id)
+                admin.password = generate_password_hash(new_password)
+                db.session.commit()
                 msg = 'Password updated successfully!'
     return render_template('admin/profile.html', msg=msg)
-
 
 if __name__ == "__main__":
     app.run(debug=True)
