@@ -5,60 +5,337 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='user/assets/assets3/htl2.png') }}" style="width: 128px; height: 128px;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css"/>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='user/css/my_booking.css') }}">
-    <title>My Bookings</title>
+    <title>Miramar Hotel - My Bookings</title>
 </head>
 <body>
-<a href="{{ url_for('index') }}" class="btn-default mb-4 back-button" style="text-decoration: none;">
-    <i class="ri-arrow-left-line"></i>
-    <p>Back</p>
-</a>
+    <!-- Header Section -->
+    <div class="header-container">
+        <div class="header-content">
+            <div class="back-section">
+                <a href="{{ url_for('index') }}" class="back-button">
+                    <i class="uil uil-arrow-left"></i>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+            
+            <div class="header-info">
+                <div class="hotel-logo">
+                    <img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="Miramar Hotel">
+                </div>
+                <div class="user-info">
+                    <h2>My Bookings</h2>
+                    <p>Welcome back, {{ username }}</p>
+                </div>
+            </div>
 
-<div class="title">
-    <h1>All Booking History</h1>
-</div>
-<table id="bookings-table">
-    <thead>
-        <tr>
-            <th>Booking ID</th>
-            <th>Room Name</th>
-            <th>Check-In</th>
-            <th>Check-Out</th>
-            <th>No. of Guests</th>
-            <th>Room Type</th>
-            <th>Price</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody id="bookings-table-body">
-        {% if bookings %}
-            {% for booking in bookings %}
-                <tr>
-                    <td data-label="Booking ID">{{ booking.id }}</td>
-                    <td data-label="Room Name">{{ booking.room_name }}</td>
-                    <td data-label="Check-In">{{ booking.check_in }}</td>
-                    <td data-label="Check-Out">{{ booking.check_out }}</td>
-                    <td data-label="No. of Guests">{{ booking.no_of_guests }}</td>
-                    <td data-label="Room Type">{{ booking.room_type }}</td>
-                    <td data-label="Price">${{ "%.2f"|format(booking.price) }}</td>
-                    <td data-label="Status">
-                        {% if booking.status == 'Pending' %}
-                            <span style="color: #ff9900;">Pending</span>
-                        {% elif booking.status == 'Confirmed' %}
-                            <span style="color: #00cc00;">Confirmed</span>
-                        {% elif booking.status == 'Canceled' %}
-                            <span style="color: #ff0000;">Canceled</span>
+            <div class="header-actions">
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="uil uil-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Booking Stats -->
+        <div class="booking-stats">
+            <div class="stat-card total">
+                <i class="uil uil-calendar-alt"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ bookings|length if bookings else 0 }}</span>
+                    <span class="stat-label">Total Bookings</span>
+                </div>
+            </div>
+            <div class="stat-card confirmed">
+                <i class="uil uil-check-circle"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ bookings | selectattr('status', 'equalto', 'Confirmed') | list | length }}</span>
+                    <span class="stat-label">Confirmed</span>
+                </div>
+            </div>
+            <div class="stat-card pending">
+                <i class="uil uil-clock-eight"></i>
+                <div class="stat-info">
+                    <span class="stat-number">{{ bookings | selectattr('status', 'equalto', 'Pending') | list | length }}</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
+            <div class="stat-card spent">
+                <i class="uil uil-dollar-sign"></i>
+                <div class="stat-info">
+                    <span class="stat-number">${{ total_spent or '0' }}</span>
+                    <span class="stat-label">Total Spent</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="filter-section">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-status="all">
+                    <i class="uil uil-list-ul"></i>
+                    All Bookings
+                </button>
+                <button class="filter-btn" data-status="confirmed">
+                    <i class="uil uil-check-circle"></i>
+                    Confirmed
+                </button>
+                <button class="filter-btn" data-status="pending">
+                    <i class="uil uil-clock-eight"></i>
+                    Pending
+                </button>
+                <button class="filter-btn" data-status="cancelled">
+                    <i class="uil uil-times-circle"></i>
+                    Canceled
+                </button>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-box">
+                    <i class="uil uil-search"></i>
+                    <input type="text" id="search-input" placeholder="Search bookings...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="bookings-container">
+            <div class="table-header">
+                <h3>Your Booking History</h3>
+                <div class="table-actions">
+                    <button class="action-btn export">
+                        <i class="uil uil-export"></i>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="modern-table" id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Booking Details</th>
+                            <th>Room Information</th>
+                            <th>Stay Duration</th>
+                            <th>Guests & Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        {% if bookings %}
+                            {% for booking in bookings %}
+                                <tr class="booking-row" data-status="{{ booking.status.lower() }}">
+                                    <td>
+                                        <div class="booking-details">
+                                            <div class="booking-id">
+                                                <span class="id-label">Booking #{{ booking.id }}</span>
+                                            </div>
+                                            <div class="booking-meta">
+                                                <span class="booking-date">Booked Recently</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="room-info">
+                                            <span class="room-name">{{ booking.room_name }}</span>
+                                            <span class="room-type">{{ booking.room_type }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="stay-duration">
+                                            <div class="date-info">
+                                                <i class="uil uil-calendar-alt"></i>
+                                                <div class="date-details">
+                                                    <span class="date-label">Check-in</span>
+                                                    <span class="date-value">{{ booking.check_in }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="date-separator">→</div>
+                                            <div class="date-info">
+                                                <i class="uil uil-calendar-alt"></i>
+                                                <div class="date-details">
+                                                    <span class="date-label">Check-out</span>
+                                                    <span class="date-value">{{ booking.check_out }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="guest-price-info">
+                                            <div class="guests-info">
+                                                <i class="uil uil-users-alt"></i>
+                                                <span>{{ booking.no_of_guests }} Guest{{ 's' if booking.no_of_guests != 1 else '' }}</span>
+                                            </div>
+                                            <div class="price-info">
+                                                <span class="currency">$</span>
+                                                <span class="amount">{{ "%.2f"|format(booking.price) }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ booking.status.lower() }}">
+                                            {% if booking.status == 'Pending' %}
+                                                <i class="uil uil-clock-eight"></i>
+                                            {% elif booking.status == 'Confirmed' %}
+                                                <i class="uil uil-check-circle"></i>
+                                            {% elif booking.status in ['Canceled', 'Cancelled'] %}
+                                                <i class="uil uil-times-circle"></i>
+                                            {% endif %}
+                                            {{ booking.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="action-btn view" onclick="viewBooking({{ booking.id }})">
+                                                <i class="uil uil-eye"></i>
+                                                <span>View</span>
+                                            </button>
+                                            {% if booking.status == 'Confirmed' %}
+                                                <button class="action-btn download" onclick="downloadReceipt({{ booking.id }})">
+                                                    <i class="uil uil-file-download-alt"></i>
+                                                    <span>Receipt</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if booking.status == 'Pending' %}
+                                                <button class="action-btn cancel" onclick="cancelBooking({{ booking.id }})">
+                                                    <i class="uil uil-times"></i>
+                                                    <span>Cancel</span>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="no-data">
+                                    <i class="uil uil-calendar-slash"></i>
+                                    <div class="no-data-content">
+                                        <span class="no-data-title">No bookings found</span>
+                                        <span class="no-data-subtitle">Start your journey by booking your first room</span>
+                                        <a href="{{ url_for('rooms') }}" class="book-now-btn">
+                                            <i class="uil uil-plus"></i>
+                                            Book Now
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
                         {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="8">No bookings found.</td>
-            </tr>
-        {% endif %}
-    </tbody>
-</table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+
+        // Initialize theme from localStorage
+        let currentTheme = localStorage.getItem('user-theme');
+        if (currentTheme === 'dark') {
+            body.classList.add('dark');
+            themeIcon.classList.replace('uil-moon', 'uil-sun');
+        }
+
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark');
+            if (body.classList.contains('dark')) {
+                localStorage.setItem('user-theme', 'dark');
+                themeIcon.classList.replace('uil-moon', 'uil-sun');
+            } else {
+                localStorage.setItem('user-theme', 'light');
+                themeIcon.classList.replace('uil-sun', 'uil-moon');
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const tableBody = document.getElementById('bookings-table-body');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = tableBody.querySelectorAll('.booking-row');
+
+            rows.forEach(row => {
+                const roomName = row.querySelector('.room-name')?.textContent.toLowerCase() || '';
+                const roomType = row.querySelector('.room-type')?.textContent.toLowerCase() || '';
+                const bookingId = row.querySelector('.id-label')?.textContent.toLowerCase() || '';
+
+                if (roomName.includes(searchTerm) || 
+                    roomType.includes(searchTerm) || 
+                    bookingId.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active button
+                filterButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const status = btn.dataset.status;
+                const rows = tableBody.querySelectorAll('.booking-row');
+                
+                rows.forEach(row => {
+                    if (status === 'all' || row.dataset.status === status) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Action functions
+        function viewBooking(bookingId) {
+            alert(`View booking details for booking #${bookingId}`);
+        }
+
+        function downloadReceipt(bookingId) {
+            alert(`Download receipt for booking #${bookingId}`);
+        }
+
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                // Implement cancel functionality
+                alert(`Booking #${bookingId} has been cancelled`);
+            }
+        }
+
+        // Export functionality
+        document.querySelector('.export').addEventListener('click', function() {
+            alert('Export functionality would generate PDF/CSV of your bookings');
+        });
+
+        // Add animation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('.booking-row');
+            rows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(20px)';
+                row.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+                
+                setTimeout(() => {
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 100);
+            });
+        });
+    </script>
 </body>
 </html>
