@@ -299,6 +299,19 @@ def my_bookings():
         return redirect(url_for('user_login'))
     user_email = session['email']
     bookings = Booking.query.filter_by(email=user_email).all()
+    
+    # Calculate total spent
+    total_spent = sum(booking.price for booking in bookings if booking.status == 'Confirmed')
+    
+    return render_template('user/my_bookings.html', 
+                         bookings=bookings, 
+                         email=user_email, 
+                         username=session['username'],
+                         total_spent=total_spent)
+    if 'loggedin' not in session:
+        return redirect(url_for('user_login'))
+    user_email = session['email']
+    bookings = Booking.query.filter_by(email=user_email).all()
     return render_template('user/my_bookings.html', bookings=bookings, email=user_email, username=session['username'])
 
 # Manage Bookings Route
