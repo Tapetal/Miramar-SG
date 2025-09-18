@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/manage_feedback.css') }}">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <title>Miramar Hotel - Feedback Management</title>
+</head>
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="Miramar Hotel"></a>
+            </div>
+            <span class="logo_name">Miramar Hotel</span>
+        </div>
+
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">
+                    <i class="uil uil-estate"></i>
+                    <span class="link-name">Dashboard</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_rooms') }}">
+                    <i class="uil uil-bed-double"></i>
+                    <span class="link-name">Rooms</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_customers') }}">
+                    <i class="uil uil-users-alt"></i>
+                    <span class="link-name">Customers</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_bookings') }}">
+                    <i class="uil uil-calendar-alt"></i>
+                    <span class="link-name">Bookings</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_feedback') }}" class="active">
+                    <i class="uil uil-comment-alt-lines"></i>
+                    <span class="link-name">Feedback</span>
+                </a></li>
+            </ul>
+
+            <ul class="logout-mode">
+                <li><a href="{{ url_for('admin_logout') }}">
+                    <i class="uil uil-signout"></i>
+                    <span class="link-name">Logout</span>
+                </a></li>
+
+                <li class="mode">
+                    <a href="#" id="dark-mode-toggle">
+                        <i class="uil uil-moon" id="mode-icon"></i>
+                        <span class="link-name">Dark Mode</span>
+                    </a>
+                    <div class="mode-toggle">
+                        <span class="switch"></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+
+            <div class="search-box">
+                <i class="uil uil-search"></i>
+                <input type="text" id="search-input" placeholder="Search feedback by customer name or message...">
+            </div>
+            <a href="{{ url_for('admin_profile') }}">
+                <img src="{{ url_for('static', filename='user/assets/pfl_dark.png') }}" class="profile" id="profileImage" />
+            </a>
+        </div>
+
+        <div class="dash-content">
+            <div class="title">
+                <i class="uil uil-comment-alt-lines"></i>
+                <span class="text">Feedback Management</span>
+            </div>
+
+            <!-- Feedback Stats -->
+            <div class="feedback-stats">
+                <div class="stat-card total">
+                    <i class="uil uil-comment-alt-lines"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ feedback|length if feedback else 0 }}</span>
+                        <span class="stat-label">Total Feedback</span>
+                    </div>
+                </div>
+                <div class="stat-card rating">
+                    <i class="uil uil-star"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ avg_rating or '4.5' }}</span>
+                        <span class="stat-label">Average Rating</span>
+                    </div>
+                </div>
+                <div class="stat-card positive">
+                    <i class="uil uil-thumbs-up"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ positive_feedback or 0 }}</span>
+                        <span class="stat-label">Positive Reviews</span>
+                    </div>
+                </div>
+                <div class="stat-card pending">
+                    <i class="uil uil-clock-eight"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ pending_feedback or 0 }}</span>
+                        <span class="stat-label">Pending Review</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-rating="all">All Reviews</button>
+                <button class="filter-btn" data-rating="5">
+                    <i class="uil uil-star"></i>
+                    5 Stars
+                </button>
+                <button class="filter-btn" data-rating="4">
+                    <i class="uil uil-star"></i>
+                    4 Stars
+                </button>
+                <button class="filter-btn" data-rating="3">
+                    <i class="uil uil-star"></i>
+                    3 Stars
+                </button>
+                <button class="filter-btn" data-rating="2">
+                    <i class="uil uil-star"></i>
+                    2 Stars
+                </button>
+                <button class="filter-btn" data-rating="1">
+                    <i class="uil uil-star"></i>
+                    1 Star
+                </button>
+            </div>
+
+            <!-- Feedback Cards -->
+            <div class="feedback-container">
+                {% if feedback %}
+                    {% for review in feedback %}
+                        <div class="feedback-card" data-rating="{{ review.rating or 5 }}">
+                            <div class="feedback-header">
+                                <div class="customer-info">
+                                    <div class="customer-avatar">{{ review.name[0].upper() if review.name else 'G' }}</div>
+                                    <div class="customer-details">
+                                        <h4 class="customer-name">{{ review.name or 'Guest' }}</h4>
+                                        <span class="customer-email">{{ review.email or 'anonymous@example.com' }}</span>
+                                    </div>
+                                </div>
+                                <div class="feedback-meta">
+                                    <div class="rating-stars">
+                                        {% for i in range(1, 6) %}
+                                            <i class="uil uil-star {% if i <= (review.rating or 5) %}filled{% endif %}"></i>
+                                        {% endfor %}
+                                        <span class="rating-number">{{ review.rating or 5 }}/5</span>
+                                    </div>
+                                    <span class="feedback-date">{{ review.date or 'Recent' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="feedback-content">
+                                <p class="feedback-message">{{ review.message or 'Great service and comfortable stay! The staff was very friendly and the room was clean and well-maintained. Would definitely recommend to others.' }}</p>
+                            </div>
+                            
+                            <div class="feedback-actions">
+                                <button class="action-btn reply" onclick="replyToFeedback({{ review.id if review.id else 'null' }})">
+                                    <i class="uil uil-comment-alt-reply"></i>
+                                    <span>Reply</span>
+                                </button>
+                                <button class="action-btn feature" onclick="featureFeedback({{ review.id if review.id else 'null' }})">
+                                    <i class="uil uil-favorite"></i>
+                                    <span>Feature</span>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteFeedback({{ review.id if review.id else 'null' }}, '{{ review.name or 'Guest' }}')">
+                                    <i class="uil uil-trash-alt"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Sample Feedback Cards for Demo -->
+                    <div class="feedback-card" data-rating="5">
+                        <div class="feedback-header">
+                            <div class="customer-info">
+                                <div class="customer-avatar">J</div>
+                                <div class="customer-details">
+                                    <h4 class="customer-name">John Smith</h4>
+                                    <span class="customer-email">john.smith@email.com</span>
+                                </div>
+                            </div>
+                            <div class="feedback-meta">
+                                <div class="rating-stars">
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <span class="rating-number">5/5</span>
+                                </div>
+                                <span class="feedback-date">2 days ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-content">
+                            <p class="feedback-message">Absolutely amazing experience! The room was spotless, the staff was incredibly friendly and helpful, and the amenities exceeded our expectations. The view from our room was breathtaking. Will definitely be returning!</p>
+                        </div>
+                        
+                        <div class="feedback-actions">
+                            <button class="action-btn reply" onclick="replyToFeedback(1)">
+                                <i class="uil uil-comment-alt-reply"></i>
+                                <span>Reply</span>
+                            </button>
+                            <button class="action-btn feature" onclick="featureFeedback(1)">
+                                <i class="uil uil-favorite"></i>
+                                <span>Feature</span>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteFeedback(1, 'John Smith')">
+                                <i class="uil uil-trash-alt"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="feedback-card" data-rating="4">
+                        <div class="feedback-header">
+                            <div class="customer-info">
+                                <div class="customer-avatar">S</div>
+                                <div class="customer-details">
+                                    <h4 class="customer-name">Sarah Johnson</h4>
+                                    <span class="customer-email">sarah.j@email.com</span>
+                                </div>
+                            </div>
+                            <div class="feedback-meta">
+                                <div class="rating-stars">
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star"></i>
+                                    <span class="rating-number">4/5</span>
+                                </div>
+                                <span class="feedback-date">1 week ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-content">
+                            <p class="feedback-message">Great hotel with excellent service. The room was comfortable and clean. Only minor issue was the Wi-Fi could be faster, but overall a very pleasant stay. Would recommend!</p>
+                        </div>
+                        
+                        <div class="feedback-actions">
+                            <button class="action-btn reply" onclick="replyToFeedback(2)">
+                                <i class="uil uil-comment-alt-reply"></i>
+                                <span>Reply</span>
+                            </button>
+                            <button class="action-btn feature" onclick="featureFeedback(2)">
+                                <i class="uil uil-favorite"></i>
+                                <span>Feature</span>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteFeedback(2, 'Sarah Johnson')">
+                                <i class="uil uil-trash-alt"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="feedback-card" data-rating="3">
+                        <div class="feedback-header">
+                            <div class="customer-info">
+                                <div class="customer-avatar">M</div>
+                                <div class="customer-details">
+                                    <h4 class="customer-name">Mike Davis</h4>
+                                    <span class="customer-email">mike.davis@email.com</span>
+                                </div>
+                            </div>
+                            <div class="feedback-meta">
+                                <div class="rating-stars">
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star filled"></i>
+                                    <i class="uil uil-star"></i>
+                                    <i class="uil uil-star"></i>
+                                    <span class="rating-number">3/5</span>
+                                </div>
+                                <span class="feedback-date">2 weeks ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-content">
+                            <p class="feedback-message">Average experience. The room was okay but could use some updates. Service was decent but not exceptional. The location is good though. Room for improvement.</p>
+                        </div>
+                        
+                        <div class="feedback-actions">
+                            <button class="action-btn reply" onclick="replyToFeedback(3)">
+                                <i class="uil uil-comment-alt-reply"></i>
+                                <span>Reply</span>
+                            </button>
+                            <button class="action-btn feature" onclick="featureFeedback(3)">
+                                <i class="uil uil-favorite"></i>
+                                <span>Feature</span>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteFeedback(3, 'Mike Davis')">
+                                <i class="uil uil-trash-alt"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Load More Button -->
+            {% if feedback and feedback|length > 6 %}
+            <div class="load-more-container">
+                <button class="load-more-btn">
+                    <i class="uil uil-angle-down"></i>
+                    Load More Reviews
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Reply Modal -->
+    <div id="reply-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reply to Feedback</h3>
+                <span class="modal-close" onclick="closeReplyModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="reply-form">
+                    <div class="form-group">
+                        <label for="reply-message">Your Reply:</label>
+                        <textarea id="reply-message" placeholder="Thank you for your feedback. We appreciate your comments and will use them to improve our service..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-secondary" onclick="closeReplyModal()">Cancel</button>
+                        <button class="btn-primary" onclick="sendReply()">Send Reply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar and dark mode functionality
+        const body = document.querySelector("body");
+        const sidebar = body.querySelector("nav");
+        const sidebarToggle = body.querySelector(".sidebar-toggle");
+        const modeToggle = body.querySelector(".mode-toggle");
+        const modeIcon = body.querySelector("#mode-icon");
+        const darkModeToggle = body.querySelector("#dark-mode-toggle");
+
+        // Initialize dark mode
+        let getMode = localStorage.getItem("mode");
+        if (getMode && getMode === "dark") {
+            body.classList.add("dark");
+            modeIcon.classList.replace("uil-moon", "uil-sun");
+        }
+
+        // Initialize sidebar state
+        let getStatus = localStorage.getItem("status");
+        if (getStatus && getStatus === "close") {
+            sidebar.classList.add("close");
+        }
+
+        // Dark mode toggle
+        modeToggle.addEventListener("click", () => {
+            body.classList.toggle("dark");
+            if (body.classList.contains("dark")) {
+                localStorage.setItem("mode", "dark");
+                modeIcon.classList.replace("uil-moon", "uil-sun");
+            } else {
+                localStorage.setItem("mode", "light");
+                modeIcon.classList.replace("uil-sun", "uil-moon");
+            }
+        });
+
+        darkModeToggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            modeToggle.click();
+        });
+
+        // Sidebar toggle
+        sidebarToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("close");
+            if (sidebar.classList.contains("close")) {
+                localStorage.setItem("status", "close");
+            } else {
+                localStorage.setItem("status", "open");
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const feedbackContainer = document.querySelector('.feedback-container');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const feedbackCards = feedbackContainer.querySelectorAll('.feedback-card');
+
+            feedbackCards.forEach(card => {
+                const customerName = card.querySelector('.customer-name').textContent.toLowerCase();
+                const customerEmail = card.querySelector('.customer-email').textContent.toLowerCase();
+                const message = card.querySelector('.feedback-message').textContent.toLowerCase();
+
+                if (customerName.includes(searchTerm) || 
+                    customerEmail.includes(searchTerm) || 
+                    message.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active button
+                filterButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const rating = btn.dataset.rating;
+                const feedbackCards = feedbackContainer.querySelectorAll('.feedback-card');
+                
+                feedbackCards.forEach(card => {
+                    if (rating === 'all' || card.dataset.rating === rating) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Action functions
+        function replyToFeedback(feedbackId) {
+            document.getElementById('reply-modal').style.display = 'flex';
+            // You can load specific feedback data here if needed
+        }
+
+        function featureFeedback(feedbackId) {
+            if (confirm('Feature this feedback on your website?')) {
+                // Implement feature functionality
+                alert(`Feedback ${feedbackId} has been featured`);
+            }
+        }
+
+        function deleteFeedback(feedbackId, customerName) {
+            if (confirm(`Are you sure you want to delete feedback from "${customerName}"? This action cannot be undone.`)) {
+                // Implement delete functionality
+                alert(`Feedback from ${customerName} has been deleted`);
+            }
+        }
+
+        // Modal functions
+        function closeReplyModal() {
+            document.getElementById('reply-modal').style.display = 'none';
+            document.getElementById('reply-message').value = '';
+        }
+
+        function sendReply() {
+            const message = document.getElementById('reply-message').value;
+            if (message.trim()) {
+                // Implement send reply functionality
+                alert('Reply sent successfully!');
+                closeReplyModal();
+            } else {
+                alert('Please enter a reply message.');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('reply-modal');
+            if (event.target === modal) {
+                closeReplyModal();
+            }
+        }
+
+        // Load more functionality
+        const loadMoreBtn = document.querySelector('.load-more-btn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                // Implement load more functionality
+                alert('Load more reviews functionality would be implemented here');
+            });
+        }
+
+        // Add animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all feedback cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedbackCards = document.querySelectorAll('.feedback-card');
+            feedbackCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>

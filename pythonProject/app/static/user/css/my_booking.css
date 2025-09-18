@@ -1,0 +1,96 @@
+/* Define CSS variables for the colors */
+:root {
+    --white: #ffffff;
+    --primary-color: #e82574; /* Example primary color */
+    --primary-color-dark: #bc1c5c; /* Example darker shade of primary color */
+}
+
+/* Style for the back button */
+.back-button {
+    padding: 0.75rem 1.5rem;
+    outline: none;
+    border: none;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--white); /* Text color */
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.back-button i {
+    margin-right: 5px;
+    color: var(--white); /* Icon color */
+}
+
+/* Style the <p> inside the back button */
+.back-button p {
+    margin: 0;
+    color: var(--white); /* Text color */
+}
+
+/* Add hover effect to the back button */
+.back-button:hover {
+    background-color: var(--primary-color-dark);
+}
+
+/* Title Styling */
+.title {
+    margin: 80px 20px 20px 20px; /* Provide space for the back button and some margin at the top */
+}
+
+.title h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+}
+
+/* Table Styling */
+#bookings-table {
+    width: calc(100% - 40px); /* Adjust width to account for padding/margin */
+    margin: 20px 20px 20px 20px; /* Ensure table has space from the sides and bottom */
+    border-collapse: collapse;
+}
+
+#bookings-table thead {
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+#bookings-table th, #bookings-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#bookings-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+
+#bookings-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#bookings-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+#bookings-table td a.btn {
+    color: #dc3545; /* Red color for the cancel button */
+    text-decoration: none;
+    font-size: 16px;
+}
+
+#bookings-table td a.btn:hover {
+    color: #c82333;
+    text-decoration: underline;
+}

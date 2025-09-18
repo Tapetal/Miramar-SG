@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='user/assets/assets3/htl2.png') }}" style="width: 128px; height: 128px;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+    <link rel="stylesheet" href="{{ url_for('static', filename='user/css/my_booking.css') }}">
+    <title>My Bookings</title>
+</head>
+<body>
+<a href="{{ url_for('index') }}" class="btn-default mb-4 back-button" style="text-decoration: none;">
+    <i class="ri-arrow-left-line"></i>
+    <p>Back</p>
+</a>
+
+<div class="title">
+    <h1>All Booking History</h1>
+</div>
+<table id="bookings-table">
+    <thead>
+        <tr>
+            <th>Booking ID</th>
+            <th>Room Name</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>No. of Guests</th>
+            <th>Room Type</th>
+            <th>Price</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody id="bookings-table-body">
+        {% if bookings %}
+            {% for booking in bookings %}
+                <tr>
+                    <td data-label="Booking ID">{{ booking.id }}</td>
+                    <td data-label="Room Name">{{ booking.room_name }}</td>
+                    <td data-label="Check-In">{{ booking.check_in }}</td>
+                    <td data-label="Check-Out">{{ booking.check_out }}</td>
+                    <td data-label="No. of Guests">{{ booking.no_of_guests }}</td>
+                    <td data-label="Room Type">{{ booking.room_type }}</td>
+                    <td data-label="Price">${{ "%.2f"|format(booking.price) }}</td>
+                    <td data-label="Status">
+                        {% if booking.status == 'Pending' %}
+                            <span style="color: #ff9900;">Pending</span>
+                        {% elif booking.status == 'Confirmed' %}
+                            <span style="color: #00cc00;">Confirmed</span>
+                        {% elif booking.status == 'Canceled' %}
+                            <span style="color: #ff0000;">Canceled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="8">No bookings found.</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+</body>
+</html>

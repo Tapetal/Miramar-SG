@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/manage_customers.css') }}">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <title>Miramar Hotel - Customer Management</title>
+</head>
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="Miramar Hotel"></a>
+            </div>
+            <span class="logo_name">Miramar Hotel</span>
+        </div>
+
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">
+                    <i class="uil uil-estate"></i>
+                    <span class="link-name">Dashboard</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_rooms') }}">
+                    <i class="uil uil-bed-double"></i>
+                    <span class="link-name">Rooms</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_customers') }}" class="active">
+                    <i class="uil uil-users-alt"></i>
+                    <span class="link-name">Customers</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_bookings') }}">
+                    <i class="uil uil-calendar-alt"></i>
+                    <span class="link-name">Bookings</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_feedback') }}">
+                    <i class="uil uil-comment-alt-lines"></i>
+                    <span class="link-name">Feedback</span>
+                </a></li>
+            </ul>
+
+            <ul class="logout-mode">
+                <li><a href="{{ url_for('admin_logout') }}">
+                    <i class="uil uil-signout"></i>
+                    <span class="link-name">Logout</span>
+                </a></li>
+
+                <li class="mode">
+                    <a href="#" id="dark-mode-toggle">
+                        <i class="uil uil-moon" id="mode-icon"></i>
+                        <span class="link-name">Dark Mode</span>
+                    </a>
+                    <div class="mode-toggle">
+                        <span class="switch"></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+
+            <div class="search-box">
+                <i class="uil uil-search"></i>
+                <input type="text" id="search-input" placeholder="Search customers by name or email...">
+            </div>
+            <a href="{{ url_for('admin_profile') }}">
+                <img src="{{ url_for('static', filename='user/assets/pfl_dark.png') }}" class="profile" id="profileImage" />
+            </a>
+        </div>
+
+        <div class="dash-content">
+            <div class="title">
+                <i class="uil uil-users-alt"></i>
+                <span class="text">Customer Management</span>
+            </div>
+
+            <!-- Customer Stats -->
+            <div class="customer-stats">
+                <div class="stat-card total">
+                    <i class="uil uil-users-alt"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ users|length if users else 0 }}</span>
+                        <span class="stat-label">Total Customers</span>
+                    </div>
+                </div>
+                <div class="stat-card new">
+                    <i class="uil uil-user-plus"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ new_customers or 0 }}</span>
+                        <span class="stat-label">New This Month</span>
+                    </div>
+                </div>
+                <div class="stat-card active">
+                    <i class="uil uil-calendar-alt"></i>
+                    <div class="stat-info">
+                        <span class="stat-number">{{ active_customers or 0 }}</span>
+                        <span class="stat-label">Active Bookings</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>Registered Customers</h3>
+                    <div class="table-actions">
+                        <button class="action-btn export">
+                            <i class="uil uil-export"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                </div>
+
+                <table class="modern-table" id="customer-table">
+                    <thead>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Customer Details</th>
+                            <th>Email Address</th>
+                            <th>Join Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-table-body">
+                        {% if users %}
+                            {% for user in users %}
+                                <tr class="customer-row" data-customer-id="{{ user.id }}">
+                                    <td>
+                                        <div class="customer-id">
+                                            <span class="id-number">#{{ user.id }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="customer-details">
+                                            <div class="customer-avatar">{{ user.username[0].upper() }}</div>
+                                            <div class="customer-info">
+                                                <span class="customer-name">{{ user.username }}</span>
+                                                <span class="customer-type">Regular Customer</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="email-info">
+                                            <i class="uil uil-envelope"></i>
+                                            <span class="email-address">{{ user.email }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="join-date">
+                                            <i class="uil uil-calendar-alt"></i>
+                                            <span>{{ moment().format('MMM DD, YYYY') if moment else 'Recent' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge active">
+                                            <i class="uil uil-check-circle"></i>
+                                            Active
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="action-btn view" onclick="viewCustomer({{ user.id }})">
+                                                <i class="uil uil-eye"></i>
+                                                <span>View</span>
+                                            </button>
+                                            <button class="action-btn edit" onclick="editCustomer({{ user.id }})">
+                                                <i class="uil uil-edit"></i>
+                                                <span>Edit</span>
+                                            </button>
+                                            <button class="action-btn delete" onclick="deleteCustomer({{ user.id }}, '{{ user.username }}')">
+                                                <i class="uil uil-trash-alt"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="no-data">
+                                    <i class="uil uil-user-times"></i>
+                                    <span>No customers found</span>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                {% if users %}
+                <div class="table-footer">
+                    <div class="showing-info">
+                        Showing {{ users|length }} of {{ users|length }} customers
+                    </div>
+                    <div class="pagination">
+                        <button class="pagination-btn" disabled>
+                            <i class="uil uil-angle-left"></i>
+                        </button>
+                        <span class="pagination-info">Page 1 of 1</span>
+                        <button class="pagination-btn" disabled>
+                            <i class="uil uil-angle-right"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Customer Details Modal (Optional) -->
+    <div id="customer-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Customer Details</h3>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Customer details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar and dark mode functionality
+        const body = document.querySelector("body");
+        const sidebar = body.querySelector("nav");
+        const sidebarToggle = body.querySelector(".sidebar-toggle");
+        const modeToggle = body.querySelector(".mode-toggle");
+        const modeIcon = body.querySelector("#mode-icon");
+        const darkModeToggle = body.querySelector("#dark-mode-toggle");
+
+        // Initialize dark mode
+        let getMode = localStorage.getItem("mode");
+        if (getMode && getMode === "dark") {
+            body.classList.add("dark");
+            modeIcon.classList.replace("uil-moon", "uil-sun");
+        }
+
+        // Initialize sidebar state
+        let getStatus = localStorage.getItem("status");
+        if (getStatus && getStatus === "close") {
+            sidebar.classList.add("close");
+        }
+
+        // Dark mode toggle
+        modeToggle.addEventListener("click", () => {
+            body.classList.toggle("dark");
+            if (body.classList.contains("dark")) {
+                localStorage.setItem("mode", "dark");
+                modeIcon.classList.replace("uil-moon", "uil-sun");
+            } else {
+                localStorage.setItem("mode", "light");
+                modeIcon.classList.replace("uil-sun", "uil-moon");
+            }
+        });
+
+        darkModeToggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            modeToggle.click();
+        });
+
+        // Sidebar toggle
+        sidebarToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("close");
+            if (sidebar.classList.contains("close")) {
+                localStorage.setItem("status", "close");
+            } else {
+                localStorage.setItem("status", "open");
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const tableBody = document.getElementById('customer-table-body');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = tableBody.querySelectorAll('.customer-row');
+
+            rows.forEach(row => {
+                const customerName = row.querySelector('.customer-name').textContent.toLowerCase();
+                const emailAddress = row.querySelector('.email-address').textContent.toLowerCase();
+
+                if (customerName.includes(searchTerm) || emailAddress.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Action functions
+        function viewCustomer(customerId) {
+            // You can implement a modal or redirect to customer details page
+            alert(`View customer details for ID: ${customerId}`);
+        }
+
+        function editCustomer(customerId) {
+            // Implement edit customer functionality
+            alert(`Edit customer with ID: ${customerId}`);
+        }
+
+        function deleteCustomer(customerId, customerName) {
+            if (confirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`)) {
+                window.location.href = `/delete_user/${customerId}`;
+            }
+        }
+
+        // Modal functions (optional)
+        function closeModal() {
+            document.getElementById('customer-modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('customer-modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Export functionality (placeholder)
+        document.querySelector('.export').addEventListener('click', function() {
+            alert('Export functionality would be implemented here');
+        });
+
+        // Add hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('.customer-row');
+            rows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(4px)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

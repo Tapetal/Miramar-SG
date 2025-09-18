@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <title>Miramar Hotel - Admin Dashboard</title>
+</head>
+<body>
+    <nav>
+        <div class="logo-name">
+            <!-- <div class="logo-image">
+                <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="Miramar Hotel"></a>
+            </div> -->
+            <span class="logo_name">Miramar Hotel</span>
+        </div>
+
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}" class="active">
+                    <i class="uil uil-estate"></i>
+                    <span class="link-name">Dashboard</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_rooms') }}">
+                    <i class="uil uil-bed-double"></i>
+                    <span class="link-name">Rooms</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_customers') }}">
+                    <i class="uil uil-users-alt"></i>
+                    <span class="link-name">Customers</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_bookings') }}">
+                    <i class="uil uil-calendar-alt"></i>
+                    <span class="link-name">Bookings</span>
+                </a></li>
+                <li><a href="{{ url_for('manage_feedback') }}">
+                    <i class="uil uil-comment-alt-lines"></i>
+                    <span class="link-name">Feedback</span>
+                </a></li>
+            </ul>
+
+            <ul class="logout-mode">
+                <li><a href="{{ url_for('admin_logout') }}">
+                    <i class="uil uil-signout"></i>
+                    <span class="link-name">Logout</span>
+                </a></li>
+
+                <li class="mode">
+                    <a href="#" id="dark-mode-toggle">
+                        <i class="uil uil-moon" id="mode-icon"></i>
+                        <span class="link-name">Dark Mode</span>
+                    </a>
+                    <div class="mode-toggle">
+                        <span class="switch"></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+
+            <div class="search-box">
+                <i class="uil uil-search"></i>
+                <input type="text" placeholder="Search bookings, customers...">
+            </div>
+            <a href="{{ url_for('admin_profile') }}">
+                <img src="{{ url_for('static', filename='user/assets/pfl_dark.png') }}" class="profile" id="profileImage" />
+            </a>
+        </div>
+
+        <div class="dash-content">
+            <div class="overview">
+                <div class="title">
+                    <i class="uil uil-tachometer-fast-alt"></i>
+                    <span class="text">Hotel Overview</span>
+                </div>
+
+                <div class="boxes">
+                    <div class="box box1">
+                        <i class="uil uil-calendar-alt"></i>
+                        <span class="text">Total Bookings</span>
+                        <span class="number" id="total-bookings">{{ total_bookings or 0 }}</span>
+                    </div>
+                    <div class="box box2">
+                        <i class="uil uil-users-alt"></i>
+                        <span class="text">Active Guests</span>
+                        <span class="number" id="active-guests">{{ active_guests or 0 }}</span>
+                    </div>
+                    <div class="box box3">
+                        <i class="uil uil-percentage"></i>
+                        <span class="text">Occupancy Rate</span>
+                        <span class="number" id="occupancy-rate">{{ occupancy_rate or '0%' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity">
+                <div class="title">
+                    <i class="uil uil-clock-three"></i>
+                    <span class="text">Recent Bookings</span>
+                </div>
+
+                <div class="activity-table">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Guest Name</th>
+                                <th>Email</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_bookings %}
+                                {% for booking in recent_bookings %}
+                                <tr>
+                                    <td>
+                                        <div class="guest-info">
+                                            <div class="avatar">{{ booking.name[0].upper() }}</div>
+                                            <span>{{ booking.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ booking.email }}</td>
+                                    <td>{{ booking.room_name }}</td>
+                                    <td>{{ booking.check_in }}</td>
+                                    <td>
+                                        <span class="status-badge {{ booking.status.lower() }}">
+                                            {{ booking.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="no-data">
+                                    <i class="uil uil-calendar-slash"></i>
+                                    <span>No recent bookings found</span>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Sidebar toggle
+        const body = document.querySelector("body");
+        const sidebar = body.querySelector("nav");
+        const sidebarToggle = body.querySelector(".sidebar-toggle");
+
+        // Dark mode toggle
+        const modeToggle = body.querySelector(".mode-toggle");
+        const modeIcon = body.querySelector("#mode-icon");
+        const darkModeToggle = body.querySelector("#dark-mode-toggle");
+
+        // Initialize dark mode from localStorage
+        let getMode = localStorage.getItem("mode");
+        if (getMode && getMode === "dark") {
+            body.classList.add("dark");
+            modeIcon.classList.replace("uil-moon", "uil-sun");
+        }
+
+        // Initialize sidebar state from localStorage
+        let getStatus = localStorage.getItem("status");
+        if (getStatus && getStatus === "close") {
+            sidebar.classList.add("close");
+        }
+
+        // Dark mode toggle functionality
+        modeToggle.addEventListener("click", () => {
+            body.classList.toggle("dark");
+            if (body.classList.contains("dark")) {
+                localStorage.setItem("mode", "dark");
+                modeIcon.classList.replace("uil-moon", "uil-sun");
+            } else {
+                localStorage.setItem("mode", "light");
+                modeIcon.classList.replace("uil-sun", "uil-moon");
+            }
+        });
+
+        // Alternative dark mode toggle (clicking the link)
+        darkModeToggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            modeToggle.click();
+        });
+
+        // Sidebar toggle functionality
+        sidebarToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("close");
+            if (sidebar.classList.contains("close")) {
+                localStorage.setItem("status", "close");
+            } else {
+                localStorage.setItem("status", "open");
+            }
+        });
+
+        // Update numbers with animation (if you want to add this feature)
+        function animateNumber(element, target) {
+            let current = 0;
+            const increment = target / 50;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current);
+            }, 20);
+        }
+
+        // Optional: Add smooth scrolling and other enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any initialization code here
+            console.log('Miramar Hotel Dashboard initialized');
+        });
+    </script>
+</body>
+</html>

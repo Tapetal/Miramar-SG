@@ -1,0 +1,41 @@
+# ============================
+# Python
+# ============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# ============================
+# Flask / Databases
+# ============================
+# Ignore local SQLite DB files
+instance/*.db
+pythonProject/instance/*.db
+pythonProject/*.db
+
+# Keep .sql dumps (MySQL schemas)
+!*.sql
+
+# Flask session data
+flask_session/
+
+# ============================
+# IDE / Editor settings
+# ============================
+.idea/
+.vscode/
+*.iml
+
+# ============================
+# OS / Misc
+# ============================
+.DS_Store
+Thumbs.db
+*.log
