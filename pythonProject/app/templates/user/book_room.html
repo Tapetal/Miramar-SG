@@ -14,100 +14,13 @@
     <title>Book {{ room.name }} - Miramar Hotel</title>
 </head>
 <body>
+    <!-- Use the room's image as the header background -->
     <header class="rooms__header" style="background-image: url('{{ url_for('static', filename='user/assets/assets3/resort.jpg') }}');">
+    <!-- <header class="rooms__header" style="background-image: url('{{ url_for('static', filename='uploads/' + room.image) }}');"> -->
         <nav>
             <div class="nav__bar">
                 <div class="logo">
-                    <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/facebook.png') }}" alt="facebook" /></a>
-                    <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/instagram.png') }}" alt="instagram" /></a>
-                    <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/youtube.png') }}" alt="youtube" /></a>
-                    <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/twitter3.png') }}" alt="twitter" /></a>
-                </div>
-            </div>
-        </div>
-        <div class="footer__bar">
-            Copyright © 2024 Miramar Hotel. All rights reserved.
-        </div>
-    </footer>
-
-    <script src="https://unpkg.com/scrollreveal"></script>
-    <script src="{{ url_for('static', filename='user/js/index.js') }}"></script>
-    
-    <script>
-        // Form validation
-        document.querySelector('.booking__form').addEventListener('submit', function(e) {
-            const checkIn = new Date(document.querySelector('input[name="check_in"]').value);
-            const checkOut = new Date(document.querySelector('input[name="check_out"]').value);
-            const guests = parseInt(document.querySelector('input[name="guests"]').value);
-            const maxCapacity = {{ room.capacity }};
-            
-            // Validate dates
-            if (checkIn >= checkOut) {
-                e.preventDefault();
-                alert('Check-out date must be after check-in date.');
-                return;
-            }
-            
-            // Validate past dates
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (checkIn < today) {
-                e.preventDefault();
-                alert('Check-in date cannot be in the past.');
-                return;
-            }
-            
-            // Validate guest count
-            if (guests > maxCapacity) {
-                e.preventDefault();
-                alert(`This room can accommodate maximum ${maxCapacity} guests.`);
-                return;
-            }
-            
-            if (guests < 1) {
-                e.preventDefault();
-                alert('Please specify at least 1 guest.');
-                return;
-            }
-        });
-
-        // Calculate and display total price
-        function calculateTotal() {
-            const checkIn = document.querySelector('input[name="check_in"]').value;
-            const checkOut = document.querySelector('input[name="check_out"]').value;
-            
-            if (checkIn && checkOut) {
-                const checkInDate = new Date(checkIn);
-                const checkOutDate = new Date(checkOut);
-                const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
-                
-                if (nights > 0) {
-                    const pricePerNight = {{ room.price }};
-                    const total = nights * pricePerNight;
-                    
-                    // Update price display
-                    const priceLabel = document.querySelector('.price-label');
-                    if (priceLabel) {
-                        priceLabel.textContent = `${total.toFixed(2)} (${nights} nights)`;
-                    }
-                    
-                    // Update hidden price input
-                    document.querySelector('input[name="price"]').value = total;
-                }
-            }
-        }
-
-        // Add event listeners for date changes
-        document.querySelector('input[name="check_in"]').addEventListener('change', calculateTotal);
-        document.querySelector('input[name="check_out"]').addEventListener('change', calculateTotal);
-        
-        // Set minimum date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.querySelector('input[name="check_in"]').min = today;
-        document.querySelector('input[name="check_out"]').min = today;
-    </script>
-</body>
-</html>('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="logo"></a>
+                    <a href="#"><img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="logo"></a>
                 </div>
                 <div class="nav__menu__btn" id="menu-btn">
                     <i class="ri-menu-line"></i>
@@ -285,7 +198,7 @@
         </form>
     </section>
 
-        <footer class="footer" id="contact">
+    <footer class="footer" id="contact">
         <div class="section__container footer__container">
             <div class="footer__col">
                 <div class="logo">
@@ -335,5 +248,79 @@
 
     <script src="https://unpkg.com/scrollreveal"></script>
     <script src="{{ url_for('static', filename='user/js/index.js') }}"></script>
+    
+    <script>
+        // Form validation
+        document.querySelector('.booking__form').addEventListener('submit', function(e) {
+            const checkIn = new Date(document.querySelector('input[name="check_in"]').value);
+            const checkOut = new Date(document.querySelector('input[name="check_out"]').value);
+            const guests = parseInt(document.querySelector('input[name="guests"]').value);
+            const maxCapacity = {{ room.capacity }};
+            
+            // Validate dates
+            if (checkIn >= checkOut) {
+                e.preventDefault();
+                alert('Check-out date must be after check-in date.');
+                return;
+            }
+            
+            // Validate past dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (checkIn < today) {
+                e.preventDefault();
+                alert('Check-in date cannot be in the past.');
+                return;
+            }
+            
+            // Validate guest count
+            if (guests > maxCapacity) {
+                e.preventDefault();
+                alert(`This room can accommodate maximum ${maxCapacity} guests.`);
+                return;
+            }
+            
+            if (guests < 1) {
+                e.preventDefault();
+                alert('Please specify at least 1 guest.');
+                return;
+            }
+        });
+
+        // Calculate and display total price
+        function calculateTotal() {
+            const checkIn = document.querySelector('input[name="check_in"]').value;
+            const checkOut = document.querySelector('input[name="check_out"]').value;
+            
+            if (checkIn && checkOut) {
+                const checkInDate = new Date(checkIn);
+                const checkOutDate = new Date(checkOut);
+                const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+                
+                if (nights > 0) {
+                    const pricePerNight = {{ room.price }};
+                    const total = nights * pricePerNight;
+                    
+                    // Update price display
+                    const priceLabel = document.querySelector('.price-label');
+                    if (priceLabel) {
+                        priceLabel.textContent = `$${total.toFixed(2)} (${nights} nights)`;
+                    }
+                    
+                    // Update hidden price input
+                    document.querySelector('input[name="price"]').value = total;
+                }
+            }
+        }
+
+        // Add event listeners for date changes
+        document.querySelector('input[name="check_in"]').addEventListener('change', calculateTotal);
+        document.querySelector('input[name="check_out"]').addEventListener('change', calculateTotal);
+        
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelector('input[name="check_in"]').min = today;
+        document.querySelector('input[name="check_out"]').min = today;
+    </script>
 </body>
 </html>

@@ -799,6 +799,10 @@ input:checked + .slider:before {
         border-radius: 0;
         margin: 0 -15px 20px;
     }
+
+    .header-info {
+        gap: 10px;
+    }
     
     .form-group input {
         padding: 12px 14px;

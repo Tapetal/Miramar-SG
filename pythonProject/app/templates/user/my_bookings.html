@@ -1,295 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='user/assets/assets3/htl2.png') }}" style="width: 128px; height: 128px;">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css"/>
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - Miramar Hotel</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='user/assets/assets3/htl2.png') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='user/css/my_booking.css') }}">
-    <title>Miramar Hotel - My Bookings</title>
 </head>
 <body>
-    <!-- Header Section -->
+    <!-- Header Container -->
     <div class="header-container">
         <div class="header-content">
-            <div class="back-section">
-                <a href="{{ url_for('index') }}" class="back-button">
-                    <i class="uil uil-arrow-left"></i>
-                    <span>Back to Home</span>
-                </a>
-            </div>
+            <a href="{{ url_for('index') }}" class="back-button">
+                <i class="ri-arrow-left-line"></i>
+                <span>Back to Home</span>
+            </a>
             
             <div class="header-info">
                 <div class="hotel-logo">
-                    <img src="{{ url_for('static', filename='user/assets/assets3/Hotel_White.png') }}" alt="Miramar Hotel">
+                    <img src="{{ url_for('static', filename='user/assets/assets3/htl2.png') }}" alt="Miramar Hotel">
                 </div>
                 <div class="user-info">
-                    <h2>My Bookings</h2>
-                    <p>Welcome back, {{ username }}</p>
+                    <h2>Welcome, {{ username }}!</h2>
+                    <p>{{ email }}</p>
                 </div>
             </div>
-
-            <div class="header-actions">
-                <button class="theme-toggle" id="theme-toggle">
-                    <i class="uil uil-moon" id="theme-icon"></i>
-                </button>
+            
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <i class="ri-moon-line"></i>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main Container -->
     <div class="main-container">
         <!-- Booking Stats -->
         <div class="booking-stats">
             <div class="stat-card total">
-                <i class="uil uil-calendar-alt"></i>
+                <i class="ri-file-list-line"></i>
                 <div class="stat-info">
-                    <span class="stat-number">{{ bookings|length if bookings else 0 }}</span>
-                    <span class="stat-label">Total Bookings</span>
+                    <div class="stat-number">{{ bookings|length }}</div>
+                    <div class="stat-label">Total Bookings</div>
                 </div>
             </div>
+            
             <div class="stat-card confirmed">
-                <i class="uil uil-check-circle"></i>
+                <i class="ri-check-double-line"></i>
                 <div class="stat-info">
-                    <span class="stat-number">{{ bookings | selectattr('status', 'equalto', 'Confirmed') | list | length }}</span>
-                    <span class="stat-label">Confirmed</span>
+                    <div class="stat-number">{{ bookings|selectattr('status', 'equalto', 'Confirmed')|list|length }}</div>
+                    <div class="stat-label">Confirmed</div>
                 </div>
             </div>
+            
             <div class="stat-card pending">
-                <i class="uil uil-clock-eight"></i>
+                <i class="ri-time-line"></i>
                 <div class="stat-info">
-                    <span class="stat-number">{{ bookings | selectattr('status', 'equalto', 'Pending') | list | length }}</span>
-                    <span class="stat-label">Pending</span>
+                    <div class="stat-number">{{ bookings|selectattr('status', 'equalto', 'Pending')|list|length }}</div>
+                    <div class="stat-label">Pending</div>
                 </div>
             </div>
+            
             <div class="stat-card spent">
-                <i class="uil uil-dollar-sign"></i>
+                <i class="ri-money-dollar-circle-line"></i>
                 <div class="stat-info">
-                    <span class="stat-number">${{ total_spent or '0' }}</span>
-                    <span class="stat-label">Total Spent</span>
+                    <div class="stat-number">${{ "%.0f"|format(total_spent) }}</div>
+                    <div class="stat-label">Total Spent</div>
                 </div>
             </div>
         </div>
 
-        <!-- Filter Buttons -->
+        <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-buttons">
                 <button class="filter-btn active" data-status="all">
-                    <i class="uil uil-list-ul"></i>
+                    <i class="ri-file-list-line"></i>
                     All Bookings
                 </button>
-                <button class="filter-btn" data-status="confirmed">
-                    <i class="uil uil-check-circle"></i>
-                    Confirmed
-                </button>
                 <button class="filter-btn" data-status="pending">
-                    <i class="uil uil-clock-eight"></i>
+                    <i class="ri-time-line"></i>
                     Pending
                 </button>
+                <button class="filter-btn" data-status="confirmed">
+                    <i class="ri-check-double-line"></i>
+                    Confirmed
+                </button>
                 <button class="filter-btn" data-status="cancelled">
-                    <i class="uil uil-times-circle"></i>
-                    Canceled
+                    <i class="ri-close-line"></i>
+                    Cancelled
                 </button>
             </div>
             
-            <div class="search-section">
-                <div class="search-box">
-                    <i class="uil uil-search"></i>
-                    <input type="text" id="search-input" placeholder="Search bookings...">
-                </div>
+            <div class="search-box">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Search bookings..." id="searchInput">
             </div>
         </div>
 
-        <!-- Bookings Table -->
+        <!-- Bookings Container -->
         <div class="bookings-container">
             <div class="table-header">
                 <h3>Your Booking History</h3>
                 <div class="table-actions">
-                    <button class="action-btn export">
-                        <i class="uil uil-export"></i>
-                        <span>Export</span>
+                    <button class="action-btn export" onclick="exportBookings()">
+                        <i class="ri-download-line"></i>
+                        Export
                     </button>
                 </div>
             </div>
-
+            
             <div class="table-container">
-                <table class="modern-table" id="bookings-table">
+                {% if bookings %}
+                <table class="modern-table">
                     <thead>
                         <tr>
                             <th>Booking Details</th>
-                            <th>Room Information</th>
+                            <th>Room Info</th>
                             <th>Stay Duration</th>
                             <th>Guests & Price</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="bookings-table-body">
-                        {% if bookings %}
-                            {% for booking in bookings %}
-                                <tr class="booking-row" data-status="{{ booking.status.lower() }}">
-                                    <td>
-                                        <div class="booking-details">
-                                            <div class="booking-id">
-                                                <span class="id-label">Booking #{{ booking.id }}</span>
-                                            </div>
-                                            <div class="booking-meta">
-                                                <span class="booking-date">Booked Recently</span>
-                                            </div>
+                    <tbody id="bookingsTableBody">
+                        {% for booking in bookings %}
+                        <tr class="booking-row" data-status="{{ booking.status.lower() }}">
+                            <td>
+                                <div class="booking-details">
+                                    <div class="id-label">Booking #{{ booking.id }}</div>
+                                    <div class="booking-date">{{ booking.check_in }}</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="room-info">
+                                    <div class="room-name">{{ booking.room_name }}</div>
+                                    <div class="room-type">{{ booking.room_type }}</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="stay-duration">
+                                    <div class="date-info">
+                                        <i class="ri-calendar-check-line"></i>
+                                        <div class="date-details">
+                                            <div class="date-label">Check-in</div>
+                                            <div class="date-value">{{ booking.check_in }}</div>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <div class="room-info">
-                                            <span class="room-name">{{ booking.room_name }}</span>
-                                            <span class="room-type">{{ booking.room_type }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="stay-duration">
-                                            <div class="date-info">
-                                                <i class="uil uil-calendar-alt"></i>
-                                                <div class="date-details">
-                                                    <span class="date-label">Check-in</span>
-                                                    <span class="date-value">{{ booking.check_in }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="date-separator">→</div>
-                                            <div class="date-info">
-                                                <i class="uil uil-calendar-alt"></i>
-                                                <div class="date-details">
-                                                    <span class="date-label">Check-out</span>
-                                                    <span class="date-value">{{ booking.check_out }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="guest-price-info">
-                                            <div class="guests-info">
-                                                <i class="uil uil-users-alt"></i>
-                                                <span>{{ booking.no_of_guests }} Guest{{ 's' if booking.no_of_guests != 1 else '' }}</span>
-                                            </div>
-                                            <div class="price-info">
-                                                <span class="currency">$</span>
-                                                <span class="amount">{{ "%.2f"|format(booking.price) }}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="status-badge {{ booking.status.lower() }}">
-                                            {% if booking.status == 'Pending' %}
-                                                <i class="uil uil-clock-eight"></i>
-                                            {% elif booking.status == 'Confirmed' %}
-                                                <i class="uil uil-check-circle"></i>
-                                            {% elif booking.status in ['Canceled', 'Cancelled'] %}
-                                                <i class="uil uil-times-circle"></i>
-                                            {% endif %}
-                                            {{ booking.status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="action-btn view" onclick="viewBooking({{ booking.id }})">
-                                                <i class="uil uil-eye"></i>
-                                                <span>View</span>
-                                            </button>
-                                            {% if booking.status == 'Confirmed' %}
-                                                <button class="action-btn download" onclick="downloadReceipt({{ booking.id }})">
-                                                    <i class="uil uil-file-download-alt"></i>
-                                                    <span>Receipt</span>
-                                                </button>
-                                            {% endif %}
-                                            {% if booking.status == 'Pending' %}
-                                                <button class="action-btn cancel" onclick="cancelBooking({{ booking.id }})">
-                                                    <i class="uil uil-times"></i>
-                                                    <span>Cancel</span>
-                                                </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="no-data">
-                                    <i class="uil uil-calendar-slash"></i>
-                                    <div class="no-data-content">
-                                        <span class="no-data-title">No bookings found</span>
-                                        <span class="no-data-subtitle">Start your journey by booking your first room</span>
-                                        <a href="{{ url_for('rooms') }}" class="book-now-btn">
-                                            <i class="uil uil-plus"></i>
-                                            Book Now
-                                        </a>
                                     </div>
-                                </td>
-                            </tr>
-                        {% endif %}
+                                    <div class="date-separator">→</div>
+                                    <div class="date-info">
+                                        <i class="ri-calendar-event-line"></i>
+                                        <div class="date-details">
+                                            <div class="date-label">Check-out</div>
+                                            <div class="date-value">{{ booking.check_out }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="guest-price-info">
+                                    <div class="guests-info">
+                                        <i class="ri-user-line"></i>
+                                        {{ booking.no_of_guests }} Guest{{ 's' if booking.no_of_guests != 1 else '' }}
+                                    </div>
+                                    <div class="price-info">
+                                        <span class="currency">$</span>
+                                        <span class="amount">{{ "%.2f"|format(booking.price) }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <span class="status-badge {{ booking.status.lower() }}">
+                                    {% if booking.status.lower() == 'pending' %}
+                                        <i class="ri-time-line"></i>
+                                    {% elif booking.status.lower() == 'confirmed' %}
+                                        <i class="ri-check-double-line"></i>
+                                    {% elif booking.status.lower() == 'cancelled' %}
+                                        <i class="ri-close-line"></i>
+                                    {% endif %}
+                                    {{ booking.status }}
+                                </span>
+                            </td>
+                            
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="viewBooking({{ booking.id }})">
+                                        <i class="ri-eye-line"></i>
+                                        View
+                                    </button>
+                                    <button class="action-btn download" onclick="downloadReceipt({{ booking.id }})">
+                                        <i class="ri-download-line"></i>
+                                        Receipt
+                                    </button>
+                                    {% if booking.status.lower() == 'pending' %}
+                                    <button class="action-btn cancel" onclick="cancelBooking({{ booking.id }})">
+                                        <i class="ri-close-line"></i>
+                                        Cancel
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
+                {% else %}
+                <div class="no-data">
+                    <i class="ri-calendar-line"></i>
+                    <div class="no-data-content">
+                        <div class="no-data-title">No Bookings Yet</div>
+                        <div class="no-data-subtitle">You haven't made any bookings yet</div>
+                        <a href="{{ url_for('rooms') }}" class="book-now-btn">
+                            <i class="ri-hotel-bed-line"></i>
+                            Browse Rooms
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <script>
         // Theme toggle functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const body = document.body;
-
-        // Initialize theme from localStorage
-        let currentTheme = localStorage.getItem('user-theme');
-        if (currentTheme === 'dark') {
-            body.classList.add('dark');
-            themeIcon.classList.replace('uil-moon', 'uil-sun');
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.querySelector('.theme-toggle i');
+            
+            body.classList.toggle('dark');
+            
+            if (body.classList.contains('dark')) {
+                themeIcon.className = 'ri-sun-line';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.className = 'ri-moon-line';
+                localStorage.setItem('theme', 'light');
+            }
         }
 
-        // Theme toggle event listener
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark');
-            if (body.classList.contains('dark')) {
-                localStorage.setItem('user-theme', 'dark');
-                themeIcon.classList.replace('uil-moon', 'uil-sun');
-            } else {
-                localStorage.setItem('user-theme', 'light');
-                themeIcon.classList.replace('uil-sun', 'uil-moon');
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.querySelector('.theme-toggle i');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                themeIcon.className = 'ri-sun-line';
             }
         });
 
-        // Search functionality
-        const searchInput = document.getElementById('search-input');
-        const tableBody = document.getElementById('bookings-table-body');
-
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = tableBody.querySelectorAll('.booking-row');
-
-            rows.forEach(row => {
-                const roomName = row.querySelector('.room-name')?.textContent.toLowerCase() || '';
-                const roomType = row.querySelector('.room-type')?.textContent.toLowerCase() || '';
-                const bookingId = row.querySelector('.id-label')?.textContent.toLowerCase() || '';
-
-                if (roomName.includes(searchTerm) || 
-                    roomType.includes(searchTerm) || 
-                    bookingId.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
         // Filter functionality
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
                 // Update active button
-                filterButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
                 
-                const status = btn.dataset.status;
-                const rows = tableBody.querySelectorAll('.booking-row');
+                const status = this.dataset.status;
+                const rows = document.querySelectorAll('.booking-row');
                 
                 rows.forEach(row => {
                     if (status === 'all' || row.dataset.status === status) {
@@ -301,41 +277,58 @@
             });
         });
 
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.booking-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
         // Action functions
-        function viewBooking(bookingId) {
-            alert(`View booking details for booking #${bookingId}`);
+        function viewBooking(id) {
+            alert(`Viewing booking #${id}`);
         }
 
-        function downloadReceipt(bookingId) {
-            alert(`Download receipt for booking #${bookingId}`);
+        function downloadReceipt(id) {
+            alert(`Downloading receipt for booking #${id}`);
         }
 
-        function cancelBooking(bookingId) {
+        function cancelBooking(id) {
             if (confirm('Are you sure you want to cancel this booking?')) {
-                // Implement cancel functionality
-                alert(`Booking #${bookingId} has been cancelled`);
+                // Here you would make an AJAX call to cancel the booking
+                fetch(`/cancel_booking/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Booking cancelled successfully');
+                        location.reload();
+                    } else {
+                        alert('Error cancelling booking');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error cancelling booking');
+                });
             }
         }
 
-        // Export functionality
-        document.querySelector('.export').addEventListener('click', function() {
-            alert('Export functionality would generate PDF/CSV of your bookings');
-        });
-
-        // Add animation on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const rows = document.querySelectorAll('.booking-row');
-            rows.forEach((row, index) => {
-                row.style.opacity = '0';
-                row.style.transform = 'translateY(20px)';
-                row.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
-                
-                setTimeout(() => {
-                    row.style.opacity = '1';
-                    row.style.transform = 'translateY(0)';
-                }, 100);
-            });
-        });
+        function exportBookings() {
+            alert('Export functionality would be implemented here');
+        }
     </script>
 </body>
 </html>

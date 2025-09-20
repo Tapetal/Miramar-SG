@@ -109,7 +109,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Initialize DB and session
 # -----------------------------
 with app.app_context():
-    db.drop_all()   # ⚠️ WARNING: This deletes all data!
     db.create_all()  # Only runs if database/tables don't exist
 
 Session(app)
@@ -325,6 +324,7 @@ def manage_customers():
 def my_bookings():
     if 'loggedin' not in session:
         return redirect(url_for('user_login'))
+    
     user_email = session['email']
     bookings = Booking.query.filter_by(email=user_email).all()
     
@@ -336,11 +336,6 @@ def my_bookings():
                          email=user_email, 
                          username=session['username'],
                          total_spent=total_spent)
-    if 'loggedin' not in session:
-        return redirect(url_for('user_login'))
-    user_email = session['email']
-    bookings = Booking.query.filter_by(email=user_email).all()
-    return render_template('user/my_bookings.html', bookings=bookings, email=user_email, username=session['username'])
 
 # Manage Bookings Route
 @app.route('/manage_bookings')
@@ -363,18 +358,38 @@ def confirm_booking(booking_id):
         flash('Booking not found!')
     return redirect(url_for('manage_bookings'))
 
-@app.route('/cancel_booking/<int:booking_id>')
+# @app.route('/cancel_booking/<int:booking_id>')
+# def cancel_booking(booking_id):
+#     if 'loggedin' not in session:
+#         return redirect(url_for('admin_login'))
+#     booking = Booking.query.get(booking_id)
+#     if booking:
+#         booking.status = 'Cancelled'
+#         db.session.commit()
+#         flash('Booking cancelled successfully!')
+#     else:
+#         flash('Booking not found!')
+#     return redirect(url_for('manage_bookings'))
+
+@app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 def cancel_booking(booking_id):
     if 'loggedin' not in session:
-        return redirect(url_for('admin_login'))
-    booking = Booking.query.get(booking_id)
-    if booking:
-        booking.status = 'Cancelled'
-        db.session.commit()
-        flash('Booking cancelled successfully!')
-    else:
-        flash('Booking not found!')
-    return redirect(url_for('manage_bookings'))
+        return {'success': False, 'message': 'Not logged in'}, 401
+    
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if booking belongs to the logged-in user
+    if booking.email != session['email']:
+        return {'success': False, 'message': 'Unauthorized'}, 403
+    
+    # Only allow cancellation of pending bookings
+    if booking.status.lower() != 'pending':
+        return {'success': False, 'message': 'Cannot cancel confirmed bookings'}, 400
+    
+    booking.status = 'Cancelled'
+    db.session.commit()
+    
+    return {'success': True, 'message': 'Booking cancelled successfully'}
 
 # Updated create_room route
 @app.route('/create_room', methods=['POST'])
