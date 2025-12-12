@@ -23,17 +23,21 @@ app.secret_key = os.environ.get("SECRET_KEY", "ssshasd572332762332")
 # -----------------------------
 # Database configuration - FIXED FOR RENDER
 # -----------------------------
+# Get DATABASE_URL from environment
 database_url = os.environ.get("DATABASE_URL")
 
 if database_url:
     # Running on Render with PostgreSQL
-    # Fix postgres:// to postgresql:// for SQLAlchemy compatibility
+    # Fix postgres:// to postgresql:// for SQLAlchemy 1.4+ compatibility
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
+    
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    print(f"✅ Connected to PostgreSQL: {database_url.split('@')[1].split('/')[0]}")  # Log hostname only
 else:
     # Local development with SQLite
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    print("✅ Using local SQLite database")
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
