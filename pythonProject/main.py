@@ -18,22 +18,21 @@ from flask_migrate import Migrate
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 
 # Secret key
-app.secret_key = "ssshasd572332762332"
+app.secret_key = os.environ.get("SECRET_KEY", "ssshasd572332762332")
 
 # -----------------------------
-# Database configuration
+# Database configuration - FIXED FOR RENDER
 # -----------------------------
-DB_TYPE = os.environ.get("DB_TYPE", "sqlite")  # default to SQLite
+database_url = os.environ.get("DATABASE_URL")
 
-if DB_TYPE == "mysql":
-    DB_USER = os.environ.get("DB_USER", "root")
-    DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
-    DB_HOST = os.environ.get("DB_HOST", "localhost")
-    DB_NAME = os.environ.get("DB_NAME", "pythonproject")
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+if database_url:
+    # Running on Render with PostgreSQL
+    # Fix postgres:// to postgresql:// for SQLAlchemy compatibility
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 else:
-    # Local SQLite database
+    # Local development with SQLite
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -82,7 +81,7 @@ class Room(db.Model):
     image = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
     capacity = db.Column(db.Integer, nullable=False, default=2)
-    amenities = db.Column(db.Text, nullable=True)  # JSON string of amenities
+    amenities = db.Column(db.Text, nullable=True)
     is_available = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -100,7 +99,7 @@ class CreateRoomForm(FlaskForm):
 # -----------------------------
 # Upload folder config
 # -----------------------------
-UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'admin', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -109,7 +108,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Initialize DB and session
 # -----------------------------
 with app.app_context():
-    db.create_all()  # Only runs if database/tables don't exist
+    db.create_all()
 
 Session(app)
 
@@ -125,7 +124,7 @@ def user_login():
         email = request.form['email']
         password = request.form['password']
         user = User.query.filter_by(email=email).first()
-        if user and user.password == password:  # Consider using hashed passwords
+        if user and user.password == password:
             session['loggedin'] = True
             session['id'] = user.id
             session['username'] = user.username
@@ -247,15 +246,12 @@ def dashboard():
     if 'loggedin' not in session:
         return redirect(url_for('admin_login'))
     
-    # Calculate dashboard statistics
     total_bookings = Booking.query.count()
     active_guests = Booking.query.filter_by(status='Confirmed').count()
     
-    # Calculate occupancy rate (assuming you have total rooms - adjust as needed)
-    total_rooms = 50  # Replace with your actual room count from Room.query.count()
+    total_rooms = 50
     occupancy_rate = f"{int((active_guests / total_rooms) * 100)}%" if total_rooms > 0 else "0%"
     
-    # Get recent bookings for the activity table
     recent_bookings = Booking.query.order_by(Booking.id.desc()).limit(5).all()
     
     return render_template('admin/dashboard.html', 
@@ -264,7 +260,6 @@ def dashboard():
                          occupancy_rate=occupancy_rate,
                          recent_bookings=recent_bookings)
 
-# Updated manage_rooms route to pass existing rooms
 @app.route('/manage_rooms')
 def manage_rooms():
     if 'loggedin' not in session:
@@ -272,7 +267,6 @@ def manage_rooms():
     
     rooms = Room.query.all()
     
-    # Calculate stats
     total_rooms = len(rooms)
     available_rooms = len([r for r in rooms if r.is_available])
     occupied_rooms = total_rooms - available_rooms
@@ -284,11 +278,6 @@ def manage_rooms():
                          occupied_rooms=occupied_rooms,
                          avg_price=f"{avg_price:.2f}")
 
-    if 'loggedin' not in session:
-        return redirect(url_for('admin_login'))
-    return render_template('admin/manage_rooms.html')
-
-# Customer Deleting Route
 @app.route('/delete_user/<int:user_id>')
 def delete_user(user_id):
     if 'loggedin' not in session:
@@ -299,7 +288,6 @@ def delete_user(user_id):
         db.session.commit()
     return redirect(url_for('manage_customers'))
 
-# Customer Management Route
 @app.route('/manage_customers')
 def manage_customers():
     if 'loggedin' not in session:
@@ -307,12 +295,7 @@ def manage_customers():
     
     users = User.query.all()
     
-    # Calculate customer statistics
-    # New customers this month (you might want to add created_at field to User model)
-    # For now, we'll use a placeholder
-    new_customers = 0  # You can implement this when you add timestamp fields
-    
-    # Active customers (customers with confirmed bookings)
+    new_customers = 0
     active_customers = len(set([booking.email for booking in Booking.query.filter_by(status='Confirmed').all()]))
     
     return render_template('admin/manage_customers.html', 
@@ -328,7 +311,6 @@ def my_bookings():
     user_email = session['email']
     bookings = Booking.query.filter_by(email=user_email).all()
     
-    # Calculate total spent
     total_spent = sum(booking.price for booking in bookings if booking.status == 'Confirmed')
     
     return render_template('user/my_bookings.html', 
@@ -337,7 +319,6 @@ def my_bookings():
                          username=session['username'],
                          total_spent=total_spent)
 
-# Manage Bookings Route
 @app.route('/manage_bookings')
 def manage_bookings():
     if 'loggedin' not in session:
@@ -358,19 +339,6 @@ def confirm_booking(booking_id):
         flash('Booking not found!')
     return redirect(url_for('manage_bookings'))
 
-# @app.route('/cancel_booking/<int:booking_id>')
-# def cancel_booking(booking_id):
-#     if 'loggedin' not in session:
-#         return redirect(url_for('admin_login'))
-#     booking = Booking.query.get(booking_id)
-#     if booking:
-#         booking.status = 'Cancelled'
-#         db.session.commit()
-#         flash('Booking cancelled successfully!')
-#     else:
-#         flash('Booking not found!')
-#     return redirect(url_for('manage_bookings'))
-
 @app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 def cancel_booking(booking_id):
     if 'loggedin' not in session:
@@ -378,11 +346,9 @@ def cancel_booking(booking_id):
     
     booking = Booking.query.get_or_404(booking_id)
     
-    # Check if booking belongs to the logged-in user
     if booking.email != session['email']:
         return {'success': False, 'message': 'Unauthorized'}, 403
     
-    # Only allow cancellation of pending bookings
     if booking.status.lower() != 'pending':
         return {'success': False, 'message': 'Cannot cancel confirmed bookings'}, 400
     
@@ -391,7 +357,6 @@ def cancel_booking(booking_id):
     
     return {'success': True, 'message': 'Booking cancelled successfully'}
 
-# Updated create_room route
 @app.route('/create_room', methods=['POST'])
 def create_room():
     if 'loggedin' not in session:
@@ -404,7 +369,6 @@ def create_room():
         capacity = int(request.form.get('capacity'))
         description = request.form.get('description', '')
         
-        # Handle file upload
         if 'room_image' not in request.files:
             flash('No file selected')
             return redirect(url_for('manage_rooms'))
@@ -416,7 +380,6 @@ def create_room():
         
         if file:
             filename = secure_filename(file.filename)
-            # Add timestamp to filename to avoid conflicts
             filename = f"{int(datetime.now().timestamp())}_{filename}"
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             
@@ -437,57 +400,37 @@ def create_room():
     except Exception as e:
         flash(f'Error creating room: {str(e)}')
         return redirect(url_for('manage_rooms'))
-    if 'loggedin' not in session:
-        return redirect(url_for('admin_login'))
-    form = CreateRoomForm()
-    if form.validate_on_submit():
-        room_image = form.room_image.data
-        filename = secure_filename(room_image.filename)
-        room_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        new_room = Room(name=form.room_name.data, type=form.room_type.data, price=form.price.data, image=filename)
-        db.session.add(new_room)
-        db.session.commit()
-        return 'Room created successfully!'
-    return 'Error creating room'
 
-# Feedback Management Route
 @app.route('/manage_feedback')
 def manage_feedback():
     if 'loggedin' not in session:
         return redirect(url_for('admin_login'))
     return render_template('admin/manage_feedback.html')
 
-# Guest index page
 @app.route('/guest')
 def guest():
     return render_template('guest/guest.html')
 
-# Guest rooms page
 @app.route('/guest_rooms')
 def guest_rooms():
     return render_template('guest/guest_rooms.html')
 
-# Guest nearby places page
 @app.route('/guest_nearby')
 def guest_nearby():
     return render_template('guest/guest_nearby.html')
 
-# Guest contact page
 @app.route('/guest_contact')
 def guest_contact():
     return render_template('guest/guest_contact.html')
 
-# Updated rooms route to show dynamic rooms
 @app.route('/rooms')
 def rooms():
     if 'loggedin' not in session:
         return redirect(url_for('user_login'))
     
-    # Get all available rooms from database
     rooms = Room.query.filter_by(is_available=True).all()
     return render_template('user/rooms.html', username=session['username'], rooms=rooms)
 
-# Room Management Route
 @app.route('/nearby_places')
 def nearby_places():
     if 'loggedin' not in session:
@@ -500,7 +443,6 @@ def contact_us():
         return redirect(url_for('user_login'))
     return render_template('user/contact_us.html', username=session['username'])
 
-# New dynamic booking route
 @app.route('/book_room/<int:room_id>')
 def book_room(room_id):
     if 'loggedin' not in session:
@@ -515,45 +457,6 @@ def book_room(room_id):
                          username=session['username'], 
                          email=user.email)
 
-
-    if 'loggedin' not in session:
-        return redirect(url_for('user_login'))
-
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        room_name = request.form['room_name']
-        check_in = request.form['check_in']
-        check_out = request.form['check_out']
-        guests = request.form['guests']
-        room_type = request.form['room_type']
-
-        try:
-            price = float(request.form['price'])
-        except ValueError:
-            flash("Invalid price format.")
-            return redirect(url_for('rooms'))
-
-        new_booking = Booking(
-            name=name,
-            email=email,
-            room_name=room_name,
-            check_in=check_in,
-            check_out=check_out,
-            no_of_guests=guests,
-            room_type=room_type,
-            price=price,
-            status='Pending'
-        )
-
-        db.session.add(new_booking)
-        db.session.commit()
-        flash('Booking successful! Your booking is pending confirmation by the admin.')
-        return redirect(url_for('index'))
-
-    return redirect(url_for('rooms'))
-
-# Updated book_room_submit route
 @app.route('/book_room_submit', methods=['POST'])
 def book_room_submit():
     if 'loggedin' not in session:
@@ -574,7 +477,6 @@ def book_room_submit():
             flash("Invalid price format.")
             return redirect(url_for('rooms'))
 
-        # Validate guest count against room capacity
         room = Room.query.filter_by(name=room_name).first()
         if room and guests > room.capacity:
             flash(f"This room can accommodate maximum {room.capacity} guests.")
@@ -613,7 +515,6 @@ def admin_profile():
         return redirect(url_for('admin_login'))
     return render_template('admin/profile.html', username=session['username'])
 
-# Route to delete rooms (for admin)
 @app.route('/delete_room/<int:room_id>')
 def delete_room(room_id):
     if 'loggedin' not in session:
@@ -621,7 +522,6 @@ def delete_room(room_id):
     
     room = Room.query.get_or_404(room_id)
     
-    # Delete image file
     try:
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], room.image)
         if os.path.exists(image_path):
@@ -634,7 +534,6 @@ def delete_room(room_id):
     flash('Room deleted successfully!')
     return redirect(url_for('manage_rooms'))
 
-# Route to toggle room availability
 @app.route('/toggle_room_availability/<int:room_id>')
 def toggle_room_availability(room_id):
     if 'loggedin' not in session:
@@ -648,7 +547,6 @@ def toggle_room_availability(room_id):
     flash(f'Room "{room.name}" is now {status}.')
     return redirect(url_for('manage_rooms'))
 
-# User forgot password route
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def user_forgot_password():
     msg = ''
@@ -690,7 +588,6 @@ def update_profile():
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
-        # Validate username and email
         if not re.match(r'^[a-zA-Z0-9]+$', name):
             msg = 'Username must contain only characters and numbers!'
         elif not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
@@ -780,4 +677,5 @@ def admin_update_password():
     return render_template('admin/profile.html', msg=msg)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
