@@ -111,14 +111,23 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # -----------------------------
 # Initialize DB and session
 # -----------------------------
-with app.app_context():
-    db.create_all()
+# Don't call db.create_all() here - it will run when importing the module
+# Instead, we'll create tables on first request or via a separate command
 
 Session(app)
 
 @app.route('/')
 def home():
     return redirect(url_for('user_login'))
+
+# Initialize database tables (run this once after deployment)
+@app.route('/init-db')
+def init_db():
+    try:
+        db.create_all()
+        return "✅ Database tables created successfully!"
+    except Exception as e:
+        return f"❌ Error creating tables: {str(e)}"
 
 # User login route
 @app.route('/login', methods=['GET', 'POST'])
