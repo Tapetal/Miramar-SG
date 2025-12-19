@@ -17,8 +17,18 @@
             <i class="ri-arrow-left-line"></i> Back
         </a>
         <h4 class="font-weight-bold py-3 mb-4">
-            Account settings
+            Admin Account Settings
         </h4>
+        
+        {% if msg %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ msg }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        
         <div class="card overflow-hidden">
             <div class="row no-gutters row-bordered row-border-light">
                 <div class="col-md-3 pt-0">
@@ -39,15 +49,15 @@
                               <div class="card-body">
                                   <div class="form-group">
                                       <label class="form-label">Name</label>
-                                      <input type="text" class="form-control" name="name" value="{{ username }}">
+                                      <input type="text" class="form-control" name="name" value="{{ username }}" required>
                                   </div>
                                   <div class="form-group">
                                       <label class="form-label">E-mail</label>
-                                      <input type="text" class="form-control mb-1" name="email" value="{{ email }}">
+                                      <input type="email" class="form-control mb-1" name="email" value="{{ email }}" required>
                                   </div>
                                   <div class="form-group">
-                                      <label class="form-label">Company</label>
-                                      <input type="text" class="form-control" value="Company Ltd." disabled>
+                                      <label class="form-label">Role</label>
+                                      <input type="text" class="form-control" value="Administrator" disabled>
                                   </div>
                                   <div class="text-right mt-3">
                                       <button type="submit" class="btn btn-primary">Save changes</button>&nbsp;
@@ -61,11 +71,11 @@
                                 <form method="POST" action="{{ url_for('admin_update_password') }}">
                                   <div class="form-group">
                                       <label class="form-label">New password</label>
-                                      <input type="password" class="form-control" name="new_password">
+                                      <input type="password" class="form-control" name="new_password" required>
                                   </div>
                                   <div class="form-group">
                                       <label class="form-label">Confirm new password</label>
-                                      <input type="password" class="form-control" name="confirm_password">
+                                      <input type="password" class="form-control" name="confirm_password" required>
                                   </div>
                                   <div class="text-right mt-3">
                                       <button type="submit" class="btn btn-primary">Change password</button>&nbsp;
@@ -84,7 +94,7 @@
                                             <span class="switcher-yes"></span>
                                             <span class="switcher-no"></span>
                                         </span>
-                                        <span class="switcher-label">Email me when someone comments on my article</span>
+                                        <span class="switcher-label">Email me when someone makes a booking</span>
                                     </label>
                                 </div>
                                 <div class="form-group">
@@ -94,7 +104,7 @@
                                             <span class="switcher-yes"></span>
                                             <span class="switcher-no"></span>
                                         </span>
-                                        <span class="switcher-label">Email me when someone answers on my forum thread</span>
+                                        <span class="switcher-label">Email me when a payment is received</span>
                                     </label>
                                 </div>
                                 <div class="form-group">
@@ -104,41 +114,7 @@
                                             <span class="switcher-yes"></span>
                                             <span class="switcher-no"></span>
                                         </span>
-                                        <span class="switcher-label">Email me when someone follows me</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <hr class="border-light m-0">
-                            <div class="card-body pb-2">
-                                <h6 class="mb-4">Application</h6>
-                                <div class="form-group">
-                                    <label class="switcher">
-                                        <input type="checkbox" class="switcher-input" checked>
-                                        <span class="switcher-indicator">
-                                            <span class="switcher-yes"></span>
-                                            <span class="switcher-no"></span>
-                                        </span>
-                                        <span class="switcher-label">News and announcements</span>
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label class="switcher">
-                                        <input type="checkbox" class="switcher-input">
-                                        <span class="switcher-indicator">
-                                            <span class="switcher-yes"></span>
-                                            <span class="switcher-no"></span>
-                                        </span>
-                                        <span class="switcher-label">Weekly product updates</span>
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label class="switcher">
-                                        <input type="checkbox" class="switcher-input" checked>
-                                        <span class="switcher-indicator">
-                                            <span class="switcher-yes"></span>
-                                            <span class="switcher-no"></span>
-                                        </span>
-                                        <span class="switcher-label">Weekly blog digest</span>
+                                        <span class="switcher-label">Daily booking summary</span>
                                     </label>
                                 </div>
                             </div>

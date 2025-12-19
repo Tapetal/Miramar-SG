@@ -298,7 +298,106 @@
         }
 
         function downloadReceipt(id) {
-            alert(`Downloading receipt for booking #${id}`);
+            // Create a simple receipt (non-functional, just visual)
+            const receiptWindow = window.open('', '_blank');
+            const booking = findBookingById(id);
+    
+            receiptWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Booking Receipt #${id}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            max-width: 800px;
+                            margin: 50px auto;
+                            padding: 20px;
+                        }
+                        .receipt-header {
+                            text-align: center;
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 20px;
+                            margin-bottom: 30px;
+                        }
+                        .receipt-details {
+                            margin: 20px 0;
+                        }
+                        .detail-row {
+                            display: flex;
+                            justify-content: space-between;
+                            padding: 10px 0;
+                            border-bottom: 1px solid #eee;
+                        }
+                        .total {
+                            font-size: 20px;
+                            font-weight: bold;
+                            margin-top: 20px;
+                        }
+                        .no-print {
+                            margin-top: 30px;
+                            text-align: center;
+                        }
+                        @media print {
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="receipt-header">
+                        <h1>Miramar Hotel</h1>
+                        <h3>Booking Receipt</h3>
+                        <p>Booking ID: #${id}</p>
+                        <p>Date: ${new Date().toLocaleDateString()}</p>
+                    </div>
+            
+                    <div class="receipt-details">
+                        <div class="detail-row">
+                            <span><strong>Guest Name:</strong></span>
+                            <span>Demo Guest</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Room:</strong></span>
+                            <span>Deluxe Ocean View</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Check-in:</strong></span>
+                            <span>2024-12-20</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Check-out:</strong></span>
+                            <span>2024-12-25</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Guests:</strong></span>
+                            <span>2</span>
+                        </div>
+                        <div class="detail-row total">
+                            <span>Total Amount:</span>
+                            <span>$299.99</span>
+                        </div>
+                    </div>
+            
+                    <div class="no-print">
+                        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+                            Print Receipt
+                        </button>
+                        <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; margin-left: 10px;">
+                            Close
+                        </button>
+                    </div>
+            
+                    <p style="text-align: center; margin-top: 50px; color: #888;">
+                        <em>This is a demo receipt. For actual implementation, connect to real booking data.</em>
+                    </p>
+                </body>
+                </html>
+            `);
+        }
+
+        function findBookingById(id) {
+            // Placeholder - in real implementation, fetch from actual data
+            return { id: id, name: 'Demo Guest', room: 'Deluxe Room', price: 299.99 };
         }
 
         function cancelBooking(id) {

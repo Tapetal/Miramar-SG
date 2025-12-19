@@ -91,4 +91,41 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-
+// Booking form validation
+const bookingForm = document.getElementById('bookingForm');
+if (bookingForm) {
+    const checkInInput = document.getElementById('check-in');
+    const checkOutInput = document.getElementById('check-out');
+    const guestsInput = document.getElementById('guests');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    checkInInput.setAttribute('min', today);
+    checkOutInput.setAttribute('min', today);
+    
+    // Update checkout minimum when check-in changes
+    checkInInput.addEventListener('change', function() {
+        checkOutInput.setAttribute('min', this.value);
+        if (checkOutInput.value && checkOutInput.value <= this.value) {
+            checkOutInput.value = '';
+        }
+    });
+    
+    bookingForm.addEventListener('submit', function(e) {
+        const checkIn = new Date(checkInInput.value);
+        const checkOut = new Date(checkOutInput.value);
+        const guests = parseInt(guestsInput.value);
+        
+        if (checkOut <= checkIn) {
+            e.preventDefault();
+            alert('Check-out date must be after check-in date!');
+            return false;
+        }
+        
+        if (guests < 1) {
+            e.preventDefault();
+            alert('Please enter a valid number of guests!');
+            return false;
+        }
+    });
+}

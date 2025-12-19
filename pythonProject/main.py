@@ -136,12 +136,22 @@ def user_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        remember_me = request.form.get('remember_me')  # Get remember me checkbox
+        
         user = User.query.filter_by(email=email).first()
         if user and user.password == password:
             session['loggedin'] = True
             session['id'] = user.id
             session['username'] = user.username
             session['email'] = user.email
+            
+            # Set session permanence based on remember me
+            if remember_me:
+                session.permanent = True
+                app.permanent_session_lifetime = timedelta(days=30)
+            else:
+                session.permanent = False
+            
             msg = 'Logged in successfully!'
             return redirect(url_for('index'))
         else:
@@ -441,8 +451,18 @@ def rooms():
     if 'loggedin' not in session:
         return redirect(url_for('user_login'))
     
+    # Get booking parameters from query string
+    check_in = request.args.get('check_in', '')
+    check_out = request.args.get('check_out', '')
+    guests = request.args.get('guests', '1')
+    
     rooms = Room.query.filter_by(is_available=True).all()
-    return render_template('user/rooms.html', username=session['username'], rooms=rooms)
+    return render_template('user/rooms.html', 
+                         username=session['username'], 
+                         rooms=rooms,
+                         check_in=check_in,
+                         check_out=check_out,
+                         guests=guests)
 
 @app.route('/nearby_places')
 def nearby_places():

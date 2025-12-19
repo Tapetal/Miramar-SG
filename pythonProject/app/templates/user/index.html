@@ -65,30 +65,30 @@
     </header>
 
     <section class="section__container booking__container">
-      <form action="/" class="booking__form">
+      <form action="{{ url_for('rooms') }}" method="GET" class="booking__form" id="bookingForm">
         <div class="input__group">
           <span><i class="ri-calendar-2-fill"></i></span>
           <div>
             <label for="check-in">CHECK-IN</label>
-            <input type="date" placeholder="Check In" />
+            <input type="date" name="check_in" id="check-in" required />
           </div>
         </div>
         <div class="input__group">
           <span><i class="ri-calendar-2-fill"></i></span>
           <div>
             <label for="check-out">CHECK-OUT</label>
-            <input type="date" placeholder="Check Out" />
+            <input type="date" name="check_out" id="check-out" required />
           </div>
         </div>
         <div class="input__group">
           <span><i class="ri-user-fill"></i></span>
           <div>
             <label for="guest">GUEST</label>
-            <input type="text" placeholder="Guest" />
+            <input type="number" name="guests" id="guests" min="1" max="10" placeholder="Number of guests" required />
           </div>
         </div>
         <div class="input__group input__btn">
-          <button class="btn">CHECH OUT</button>
+          <button type="submit" class="btn">CHECK OUT</button>
         </div>
       </form>
     </section>

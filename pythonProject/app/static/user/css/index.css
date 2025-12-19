@@ -669,6 +669,54 @@ nav {
   text-align: center;
 }
 
+/* Fix profile dropdown positioning */
+nav ul:last-child {
+    position: relative;
+}
+
+nav ul:last-child li {
+    position: relative;
+}
+
+nav ul:last-child li ul#profileDropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+    }
+    
+    .nav__bar {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    /* Fix profile icon position on mobile */
+    nav > ul:last-child {
+        position: absolute;
+        right: 60px;
+        top: 10px;
+    }
+    
+    .profile {
+        height: 2.5rem;
+    }
+    
+    /* Make booking form stack on mobile */
+    .booking__form {
+        flex-direction: column;
+    }
+    
+    .input__group {
+        width: 100%;
+    }
+}
+
 @media (width > 576px) {
   .room__grid {
     grid-template-columns: repeat(2, 1fr);

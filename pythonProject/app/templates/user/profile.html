@@ -123,7 +123,8 @@
                                     <i class="uil uil-location-point"></i>
                                     Location
                                 </label>
-                                <input type="text" id="location" name="location" placeholder="City, Country">
+                                <input type="text" id="location" name="location" placeholder="Detecting..." readonly>
+                                <small class="form-text text-muted">Auto-detected from your browser</small>
                             </div>
                         </div>
                         
@@ -147,20 +148,7 @@
                         <p>Keep your account secure with a strong password</p>
                     </div>
                     
-                    <form method="POST" action="{{ url_for('update_password') }}" class="profile-form">
-                        <div class="form-group">
-                            <label for="current_password">
-                                <i class="uil uil-lock"></i>
-                                Current Password
-                            </label>
-                            <div class="password-input">
-                                <input type="password" id="current_password" name="current_password" required>
-                                <button type="button" class="password-toggle">
-                                    <i class="uil uil-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
+                    <form method="POST" action="{{ url_for('update_password') }}" class="profile-form">                        
                         <div class="form-group">
                             <label for="new_password">
                                 <i class="uil uil-lock-alt"></i>
@@ -476,6 +464,32 @@
                 }, 300);
             });
         });
+    </script>
+
+    <script>
+// Auto-detect location
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        
+        // Use reverse geocoding API (you can use any service)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+            .then(response => response.json())
+            .then(data => {
+                const city = data.address.city || data.address.town || data.address.village;
+                const country = data.address.country;
+                document.getElementById('location').value = `${city}, ${country}`;
+            })
+            .catch(() => {
+                document.getElementById('location').value = 'Location unavailable';
+            });
+    }, function(error) {
+        document.getElementById('location').value = 'Location denied';
+    });
+} else {
+    document.getElementById('location').value = 'Geolocation not supported';
+}
     </script>
 </body>
 </html>
